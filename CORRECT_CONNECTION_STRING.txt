@@ -1,0 +1,85 @@
+================================================================================
+✅ CORRECT CONNECTION STRING (FROM SUPABASE DASHBOARD)
+================================================================================
+
+USE THIS EXACT FORMAT IN STREAMLIT CLOUD SECRETS:
+
+[connections.postgresql]
+url = "postgresql://postgres:admin748745420701@db.goblvamlyonthzsjfzgr.supabase.co:5432/postgres"
+
+================================================================================
+KEY DETAILS:
+================================================================================
+
+✅ Scheme: postgresql:// (NOT postgres://)
+✅ Username: postgres
+✅ Password: admin748745420701
+✅ Host: db.goblvamlyonthzsjfzgr.supabase.co (direct database)
+✅ Port: 5432
+✅ Database: postgres
+
+This is the EXACT format from Supabase Dashboard → Project Settings → Database → Connection string → URI
+
+================================================================================
+THE CODE NOW INCLUDES:
+================================================================================
+
+The updated database.py now:
+1. ✅ Parses connection URLs properly
+2. ✅ Adds explicit sslmode='require'
+3. ✅ Sets connect_timeout=10
+4. ✅ Handles both postgresql:// and postgres:// schemes
+
+This should resolve IPv6 routing by using explicit SSL parameters.
+
+================================================================================
+STEPS TO DEPLOY:
+================================================================================
+
+1. UPLOAD database.py to GitHub
+   - Go to your GitHub repository
+   - Upload the database.py from HR_system_upload folder
+   - Or edit existing file and paste new content
+
+2. UPDATE SECRETS in Streamlit Cloud
+   - Go to: https://share.streamlit.io
+   - Your app → Settings → Secrets
+   - Paste the connection string above
+   - Save
+
+3. WAIT FOR REDEPLOY
+   - Streamlit Cloud auto-redeploys (1-2 minutes)
+   - Check logs for success
+
+================================================================================
+WHY THIS SHOULD WORK:
+================================================================================
+
+✅ Using Supabase's official connection string format
+✅ Code now parses and adds SSL explicitly
+✅ Direct connection (no pooler authentication issues)
+✅ Explicit SSL should work on Streamlit Cloud even with IPv6
+
+================================================================================
+IF YOU STILL SEE IPv6 ERRORS:
+================================================================================
+
+The code will parse the URL and connect with:
+- host='db.goblvamlyonthzsjfzgr.supabase.co'
+- port='5432'
+- user='postgres'
+- password='admin748745420701'
+- dbname='postgres'
+- sslmode='require'
+- connect_timeout=10
+
+This explicit connection should bypass IPv6 routing issues.
+
+================================================================================
+COPY THIS TO STREAMLIT CLOUD SECRETS:
+================================================================================
+
+[connections.postgresql]
+url = "postgresql://postgres:admin748745420701@db.goblvamlyonthzsjfzgr.supabase.co:5432/postgres"
+
+================================================================================

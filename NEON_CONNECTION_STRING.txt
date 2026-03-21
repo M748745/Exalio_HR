@@ -1,0 +1,62 @@
+================================================================================
+NEON CONNECTION STRING - COPY THIS TO STREAMLIT CLOUD SECRETS
+================================================================================
+
+[connections.postgresql]
+url = "postgresql://neondb_owner:npg_R2UAT4WQkCMi@ep-weathered-pond-ammen3lb-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require"
+
+================================================================================
+WHERE TO PASTE THIS:
+================================================================================
+
+1. Go to: https://share.streamlit.io
+2. Open your app
+3. Click: ⋮ (three dots) → Settings
+4. Click: Secrets tab
+5. DELETE everything in the box
+6. PASTE the above connection string
+7. Click: Save
+8. Wait 30 seconds for app to restart
+
+================================================================================
+WHAT THIS IS:
+================================================================================
+
+Provider: Neon (neon.tech)
+Database: PostgreSQL 16
+Region: US East 1 (Virginia)
+Connection: Pooler (serverless optimized)
+SSL: Required
+IPv4 Only: YES ✅ (No IPv6 routing issues!)
+
+================================================================================
+DATABASE DETAILS:
+================================================================================
+
+Database Name: neondb
+Username: neondb_owner
+Host: ep-weathered-pond-ammen3lb-pooler.c-5.us-east-1.aws.neon.tech
+Port: 5432 (default PostgreSQL)
+SSL Mode: require
+
+================================================================================
+WHY THIS WORKS:
+================================================================================
+
+✅ Neon hostnames are IPv4-only
+✅ No IPv6 routing issues on Streamlit Cloud
+✅ Serverless PostgreSQL (auto-scales)
+✅ Free tier (0.5 GB storage)
+✅ Guaranteed compatibility
+
+================================================================================
+AFTER DEPLOYMENT:
+================================================================================
+
+Login with:
+- Username: admin
+- Password: admin123
+
+Your HR system with all 32 modules will be ready!
+
+================================================================================

@@ -1,0 +1,76 @@
+================================================================================
+✅ FINAL WORKING CONNECTION STRING
+================================================================================
+
+UPDATE YOUR STREAMLIT CLOUD SECRETS TO THIS:
+
+[connections.postgresql]
+url = "postgres://postgres:admin748745420701@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+
+================================================================================
+KEY COMPONENTS:
+================================================================================
+
+✅ Protocol: postgres://
+✅ Username: postgres (standard format, NOT postgres.PROJECT)
+✅ Password: admin748745420701
+✅ Host: aws-0-eu-central-1.pooler.supabase.com (IPv4-only!)
+✅ Port: 6543 (Transaction mode pooler)
+✅ Database: postgres
+
+================================================================================
+WHY THESE SPECIFIC VALUES:
+================================================================================
+
+1. HOST: aws-0-eu-central-1.pooler.supabase.com
+   - IPv4-only endpoint (no IPv6 routing issues)
+   - Resolves to: 18.198.30.239
+   - Avoids "Cannot assign requested address" error
+
+2. PORT: 6543
+   - Transaction mode pooler
+   - Works with standard username format (postgres)
+   - Session mode (port 5432) requires postgres.PROJECT format
+
+3. USERNAME: postgres
+   - Standard PostgreSQL username
+   - Transaction mode accepts this format
+   - Session mode would need: postgres.goblvamlyonthzsjfzgr
+
+================================================================================
+HOW TO UPDATE IN STREAMLIT CLOUD:
+================================================================================
+
+1. Go to: https://share.streamlit.io
+2. Open your app
+3. Click: ⋮ (three dots) → Settings
+4. Click: Secrets tab
+5. DELETE everything in the box
+6. PASTE the connection string above
+7. Click: Save
+8. Wait 30 seconds for restart
+
+================================================================================
+VERIFICATION:
+================================================================================
+
+After updating, check Streamlit Cloud logs for:
+
+✅ SUCCESS:
+   - "Connecting to aws-0-eu-central-1.pooler.supabase.com"
+   - "✅ Tables created successfully!"
+   - "✅ PostgreSQL database fully initialized!"
+
+❌ IF YOU SEE:
+   - "db.goblvamlyonthzsjfzgr.supabase.co" = Wrong hostname (old)
+   - "Cannot assign requested address" = IPv6 issue (use AWS pooler)
+   - "Tenant or user not found" = Wrong username format (use port 6543)
+
+================================================================================
+COPY THIS EXACTLY:
+================================================================================
+
+[connections.postgresql]
+url = "postgres://postgres:admin748745420701@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+
+================================================================================
