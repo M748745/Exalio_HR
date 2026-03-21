@@ -813,14 +813,20 @@ def main():
             st.rerun()
 
         # Notifications
-        unread_count = get_unread_count()
+        try:
+            unread_count = get_unread_count()
+        except:
+            unread_count = 0  # Fallback if column doesn't exist yet
         notif_label = f"🔔 Notifications ({unread_count})" if unread_count > 0 else "🔔 Notifications"
         if st.button(notif_label, use_container_width=True):
             st.session_state.current_page = 'notifications'
             st.rerun()
 
         # Show pending count badge for approvals
-        pending_count = get_pending_approvals()
+        try:
+            pending_count = get_pending_approvals()
+        except:
+            pending_count = 0  # Fallback if there are database issues
         approval_label = f"📋 Approvals ({pending_count})" if pending_count > 0 else "📋 Approvals"
 
         if is_manager() or is_hr_admin():
