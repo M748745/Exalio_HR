@@ -218,6 +218,24 @@ def apply_migrations(cursor):
             cursor.execute("ALTER TABLE documents ADD COLUMN description TEXT")
             print("✅ Added description column to documents")
 
+        # Migration 5: Add training_catalog columns
+        cursor.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name='training_catalog'
+        """)
+        training_columns = [col['column_name'] for col in cursor.fetchall()]
+
+        if 'title' not in training_columns:
+            cursor.execute("ALTER TABLE training_catalog ADD COLUMN title TEXT")
+            # Set title to course_name for existing records
+            cursor.execute("UPDATE training_catalog SET title = course_name WHERE title IS NULL")
+            cursor.execute("ALTER TABLE training_catalog ALTER COLUMN title SET NOT NULL")
+            print("✅ Added title column to training_catalog")
+
+        if 'category' not in training_columns:
+            cursor.execute("ALTER TABLE training_catalog ADD COLUMN category TEXT")
+            print("✅ Added category column to training_catalog")
+
         # Migration 4: Fix notifications table for PostgreSQL compatibility
         cursor.execute("""
             SELECT column_name, data_type FROM information_schema.columns
@@ -585,6 +603,8 @@ def init_database():
             CREATE TABLE IF NOT EXISTS training_catalog (
                 id SERIAL PRIMARY KEY,
                 course_name TEXT NOT NULL,
+                title TEXT NOT NULL,
+                category TEXT,
                 provider TEXT,
                 description TEXT,
                 duration TEXT,
@@ -1354,11 +1374,95 @@ def init_database():
             )
         """)
 
+        # 59. Shift Templates table (Shift scheduling)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS shift_templates (
+                id SERIAL PRIMARY KEY,
+                shift_name TEXT NOT NULL,
+                shift_type TEXT CHECK(shift_type IN ('Morning', 'Afternoon', 'Evening', 'Night', 'Full Day', 'Flexible')),
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                department TEXT,
+                description TEXT,
+                status TEXT DEFAULT 'Active' CHECK(status IN ('Active', 'Inactive')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        # 60. Shift Schedules table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS shift_schedules (
+                id SERIAL PRIMARY KEY,
+                emp_id INTEGER NOT NULL,
+                shift_id INTEGER NOT NULL,
+                shift_date DATE NOT NULL,
+                location TEXT DEFAULT 'Office',
+                notes TEXT,
+                status TEXT DEFAULT 'Scheduled' CHECK(status IN ('Scheduled', 'Confirmed', 'Completed', 'Cancelled')),
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
+                FOREIGN KEY (shift_id) REFERENCES shift_templates(id),
+                FOREIGN KEY (created_by) REFERENCES employees(id)
+            )
+        """)
+
+        # 61. Compliance Requirements table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS compliance_requirements (
+                id SERIAL PRIMARY KEY,
+                requirement_name TEXT NOT NULL,
+                requirement_type TEXT CHECK(requirement_type IN ('Legal', 'Regulatory', 'Policy', 'Safety', 'Training', 'Certification', 'Other')),
+                description TEXT,
+                department TEXT,
+                responsible_party TEXT,
+                frequency TEXT CHECK(frequency IN ('One-Time', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Biennial')),
+                last_review_date DATE,
+                next_review_date DATE NOT NULL,
+                status TEXT DEFAULT 'Pending' CHECK(status IN ('Compliant', 'Pending', 'Non-Compliant', 'In Progress')),
+                evidence_file_path TEXT,
+                notes TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                FOREIGN KEY (created_by) REFERENCES employees(id)
+            )
+        """)
+
+        # 62. Onboarding table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS onboarding (
+                id SERIAL PRIMARY KEY,
+                emp_id INTEGER NOT NULL,
+                start_date DATE NOT NULL,
+                buddy_id INTEGER,
+                orientation_date DATE,
+                it_setup TEXT DEFAULT 'Pending' CHECK(it_setup IN ('Pending', 'In Progress', 'Completed')),
+                workspace_setup TEXT DEFAULT 'Pending' CHECK(workspace_setup IN ('Pending', 'In Progress', 'Completed')),
+                system_access TEXT DEFAULT 'Pending' CHECK(system_access IN ('Pending', 'In Progress', 'Completed')),
+                email_setup TEXT DEFAULT 'Pending' CHECK(email_setup IN ('Pending', 'In Progress', 'Completed')),
+                team_introduction TEXT DEFAULT 'Pending' CHECK(team_introduction IN ('Pending', 'In Progress', 'Completed')),
+                policy_review TEXT DEFAULT 'Pending' CHECK(policy_review IN ('Pending', 'In Progress', 'Completed')),
+                training_scheduled TEXT DEFAULT 'Pending' CHECK(training_scheduled IN ('Pending', 'In Progress', 'Completed')),
+                status TEXT DEFAULT 'Pending' CHECK(status IN ('Pending', 'In Progress', 'Completed', 'Cancelled')),
+                completion_date DATE,
+                notes TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                FOREIGN KEY (emp_id) REFERENCES employees(id) ON DELETE CASCADE,
+                FOREIGN KEY (buddy_id) REFERENCES employees(id),
+                FOREIGN KEY (created_by) REFERENCES employees(id)
+            )
+        """)
+
         # Apply database migrations for new fields
         apply_migrations(cursor)
 
         conn.commit()
-        print("✅ Database initialized successfully with 58 tables!")
+        print("✅ Database initialized successfully with 62 tables!")
 
 def seed_initial_data():
     """Seed database with initial demo data"""
