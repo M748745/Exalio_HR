@@ -130,6 +130,26 @@ def run_migrations():
             else:
                 print("✅ category column already exists")
 
+            # Create budgets table
+            print("\n📋 Creating budgets table...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS budgets (
+                    id SERIAL PRIMARY KEY,
+                    department TEXT NOT NULL,
+                    fiscal_year INTEGER NOT NULL,
+                    period_month INTEGER CHECK(period_month BETWEEN 1 AND 12),
+                    amount REAL NOT NULL,
+                    category TEXT CHECK(category IN ('Operational', 'Capital', 'Project', 'General')),
+                    notes TEXT,
+                    status TEXT DEFAULT 'Active' CHECK(status IN ('Active', 'Inactive', 'Closed')),
+                    created_by INTEGER,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW(),
+                    FOREIGN KEY (created_by) REFERENCES employees(id)
+                )
+            """)
+            print("✅ budgets table created")
+
             conn.commit()
             print("\n✅ All migrations completed successfully!")
 

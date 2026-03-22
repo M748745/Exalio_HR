@@ -565,250 +565,238 @@ def main():
 
         st.markdown("---")
 
-        # Navigation menu
-        st.markdown("### 📊 Main")
+        # Navigation menu with categories
+
+        # Dashboard - Always visible
         if st.button("🏠 Dashboard", use_container_width=True):
             st.session_state.current_page = 'dashboard'
             st.rerun()
 
-        # Show different menu items based on role
-        if is_hr_admin() or is_manager():
-            if st.button("👥 Employees", use_container_width=True):
-                st.session_state.current_page = 'employees'
-                st.rerun()
-
-        st.markdown("### 🔄 HR Modules")
-
-        # My Profile (All employees)
+        # My Profile - Always visible
         if st.button("👤 My Profile", use_container_width=True):
             st.session_state.current_page = 'my_profile'
             st.rerun()
 
-        # Profile Approvals (Manager & HR)
-        if is_manager() or is_hr_admin():
-            if st.button("✅ Profile Approvals", use_container_width=True):
-                st.session_state.current_page = 'profile_approvals'
+        st.markdown("---")
+
+        # 1. EMPLOYEE MANAGEMENT
+        with st.expander("👥 **Employee Management**", expanded=False):
+            if is_hr_admin() or is_manager():
+                if st.button("📋 Employee List", key="emp_list", use_container_width=True):
+                    st.session_state.current_page = 'employees'
+                    st.rerun()
+
+            if st.button("📇 Directory", key="directory", use_container_width=True):
+                st.session_state.current_page = 'directory'
                 st.rerun()
 
-        # Leave Management
-        if st.button("📅 Leave Management", use_container_width=True):
-            st.session_state.current_page = 'leave'
-            st.rerun()
+            if is_manager() or is_hr_admin():
+                if st.button("✅ Profile Approvals", key="prof_approve", use_container_width=True):
+                    st.session_state.current_page = 'profile_approvals'
+                    st.rerun()
 
-        # Performance Management
-        if st.button("🏅 Performance & Grades", use_container_width=True):
-            st.session_state.current_page = 'performance'
-            st.rerun()
+            if st.button("🚀 Career Development", key="career", use_container_width=True):
+                st.session_state.current_page = 'career'
+                st.rerun()
 
-        # Appraisals
-        if st.button("📋 Appraisals", use_container_width=True):
-            st.session_state.current_page = 'appraisals'
-            st.rerun()
+            if is_hr_admin() or is_manager():
+                if st.button("🚪 Exit Management", key="exit", use_container_width=True):
+                    st.session_state.current_page = 'exit'
+                    st.rerun()
 
-        # Contracts (HR only)
+        # 2. TIME & ATTENDANCE
+        with st.expander("⏰ **Time & Attendance**", expanded=False):
+            if st.button("📅 Leave Management", key="leave", use_container_width=True):
+                st.session_state.current_page = 'leave'
+                st.rerun()
+
+            if st.button("⏰ Timesheets", key="timesheets", use_container_width=True):
+                st.session_state.current_page = 'timesheets'
+                st.rerun()
+
+            if is_hr_admin() or is_manager():
+                if st.button("📅 Shift Scheduling", key="shifts", use_container_width=True):
+                    st.session_state.current_page = 'shifts'
+                    st.rerun()
+
+            if st.button("🔄 Shift Swap", key="shift_swap", use_container_width=True):
+                st.session_state.current_page = 'shift_swap'
+                st.rerun()
+
+        # 3. PERFORMANCE & DEVELOPMENT
+        with st.expander("📈 **Performance & Development**", expanded=False):
+            if st.button("🏅 Performance & Grades", key="performance", use_container_width=True):
+                st.session_state.current_page = 'performance'
+                st.rerun()
+
+            if st.button("📋 Appraisals", key="appraisals", use_container_width=True):
+                st.session_state.current_page = 'appraisals'
+                st.rerun()
+
+            if is_hr_admin():
+                if st.button("⚖️ Appraisal Calibration", key="calibration", use_container_width=True):
+                    st.session_state.current_page = 'calibration'
+                    st.rerun()
+
+            if st.button("🎯 Goals & OKRs", key="goals_okr", use_container_width=True):
+                st.session_state.current_page = 'goal_okr'
+                st.rerun()
+
+            if st.button("📈 PIP Management", key="pip", use_container_width=True):
+                st.session_state.current_page = 'pip'
+                st.rerun()
+
+            if st.button("🎓 Training & Development", key="training", use_container_width=True):
+                st.session_state.current_page = 'training'
+                st.rerun()
+
+            if st.button("🎓 Certificates", key="certificates", use_container_width=True):
+                st.session_state.current_page = 'certificates'
+                st.rerun()
+
+            if st.button("🎓 Certificate Tracking", key="cert_tracking", use_container_width=True):
+                st.session_state.current_page = 'certificate_tracking'
+                st.rerun()
+
+        # 4. COMPENSATION & BENEFITS
+        with st.expander("💰 **Compensation & Benefits**", expanded=False):
+            if is_hr_admin():
+                if st.button("💵 Financial Records", key="financial", use_container_width=True):
+                    st.session_state.current_page = 'financial'
+                    st.rerun()
+
+            if is_hr_admin() or is_manager():
+                if st.button("💎 Bonus Calculator", key="bonus", use_container_width=True):
+                    st.session_state.current_page = 'bonus'
+                    st.rerun()
+
+            if st.button("🏥 Medical Insurance", key="insurance", use_container_width=True):
+                st.session_state.current_page = 'insurance'
+                st.rerun()
+
+            if st.button("💰 Expense Claims", key="expenses", use_container_width=True):
+                st.session_state.current_page = 'expenses'
+                st.rerun()
+
+            if is_hr_admin():
+                if st.button("📄 Contracts", key="contracts", use_container_width=True):
+                    st.session_state.current_page = 'contracts'
+                    st.rerun()
+
+            if st.button("📄 Contract Renewal", key="contract_renewal", use_container_width=True):
+                st.session_state.current_page = 'contract_renewal'
+                st.rerun()
+
+        # 5. RECRUITMENT & ONBOARDING
+        with st.expander("💼 **Recruitment & Onboarding**", expanded=False):
+            if is_hr_admin() or is_manager():
+                if st.button("💼 Recruitment", key="recruitment", use_container_width=True):
+                    st.session_state.current_page = 'recruitment'
+                    st.rerun()
+
+            if st.button("📋 Onboarding Tasks", key="onboarding", use_container_width=True):
+                st.session_state.current_page = 'onboarding'
+                st.rerun()
+
+            if st.button("🔄 Succession Planning", key="succession", use_container_width=True):
+                st.session_state.current_page = 'succession'
+                st.rerun()
+
+        # 6. ASSETS & PROCUREMENT
+        with st.expander("💻 **Assets & Procurement**", expanded=False):
+            if is_hr_admin() or is_manager():
+                if st.button("💻 Asset Management", key="assets", use_container_width=True):
+                    st.session_state.current_page = 'assets'
+                    st.rerun()
+
+            if st.button("💼 Asset Procurement", key="asset_procurement", use_container_width=True):
+                st.session_state.current_page = 'asset_procurement'
+                st.rerun()
+
+            if st.button("💰 Budget Management", key="budget", use_container_width=True):
+                st.session_state.current_page = 'budget_management'
+                st.rerun()
+
+        # 7. DOCUMENTS & COMPLIANCE
+        with st.expander("📁 **Documents & Compliance**", expanded=False):
+            if st.button("📁 Documents", key="documents", use_container_width=True):
+                st.session_state.current_page = 'documents'
+                st.rerun()
+
+            if st.button("📋 Document Approval", key="doc_approval", use_container_width=True):
+                st.session_state.current_page = 'document_approval'
+                st.rerun()
+
+            if st.button("📋 Compliance Tracking", key="compliance", use_container_width=True):
+                st.session_state.current_page = 'compliance'
+                st.rerun()
+
+        # 8. TEAM STRUCTURE
+        with st.expander("🏢 **Team Structure**", expanded=False):
+            if st.button("🏢 Org Chart", key="org_chart", use_container_width=True):
+                st.session_state.current_page = 'org_chart'
+                st.rerun()
+
+            if is_hr_admin():
+                if st.button("🏢 Teams & Positions", key="teams", use_container_width=True):
+                    st.session_state.current_page = 'teams_positions'
+                    st.rerun()
+
+                if st.button("🎯 Skill Matrix", key="skills", use_container_width=True):
+                    st.session_state.current_page = 'skill_matrix'
+                    st.rerun()
+
+        # 9. WORKFLOW & APPROVALS
+        with st.expander("🔄 **Workflow & Approvals**", expanded=False):
+            if st.button("🚀 Promotions", key="promotions", use_container_width=True):
+                st.session_state.current_page = 'promotions'
+                st.rerun()
+
+            if is_hr_admin() or is_manager():
+                if st.button("🔄 Workflow Builder", key="workflow_builder", use_container_width=True):
+                    st.session_state.current_page = 'workflow_builder'
+                    st.rerun()
+
+            if is_hr_admin():
+                if st.button("🌳 Function Organization", key="workflow_mgmt", use_container_width=True):
+                    st.session_state.current_page = 'workflow_management'
+                    st.rerun()
+
+        # 10. COMMUNICATION
+        with st.expander("📢 **Communication**", expanded=False):
+            if st.button("📢 Announcements", key="announcements", use_container_width=True):
+                st.session_state.current_page = 'announcements'
+                st.rerun()
+
+            if st.button("📊 Surveys", key="surveys", use_container_width=True):
+                st.session_state.current_page = 'surveys'
+                st.rerun()
+
+            if st.button("📅 Calendar", key="calendar", use_container_width=True):
+                st.session_state.current_page = 'calendar'
+                st.rerun()
+
+        # 11. REPORTS & ANALYTICS
+        if is_hr_admin() or is_manager():
+            with st.expander("📊 **Reports & Analytics**", expanded=False):
+                if st.button("📊 Reports", key="reports", use_container_width=True):
+                    st.session_state.current_page = 'reports'
+                    st.rerun()
+
+        # 12. SETTINGS & ADMIN
         if is_hr_admin():
-            if st.button("📄 Contracts", use_container_width=True):
-                st.session_state.current_page = 'contracts'
-                st.rerun()
+            with st.expander("⚙️ **Settings & Admin**", expanded=False):
+                if st.button("⚙️ Admin Panel", key="admin", use_container_width=True):
+                    st.session_state.current_page = 'admin'
+                    st.rerun()
 
-        # Insurance
-        if st.button("🏥 Medical Insurance", use_container_width=True):
-            st.session_state.current_page = 'insurance'
-            st.rerun()
+                if st.button("📧 Email Settings", key="email", use_container_width=True):
+                    st.session_state.current_page = 'email'
+                    st.rerun()
 
-        # Bonus Calculator (HR & Manager)
-        if is_hr_admin() or is_manager():
-            if st.button("💎 Bonus Calculator", use_container_width=True):
-                st.session_state.current_page = 'bonus'
-                st.rerun()
-
-        # Expenses
-        if st.button("💰 Expense Claims", use_container_width=True):
-            st.session_state.current_page = 'expenses'
-            st.rerun()
-
-        # Certificates
-        if st.button("🎓 Certificates", use_container_width=True):
-            st.session_state.current_page = 'certificates'
-            st.rerun()
-
-        # Financial Records (HR only)
-        if is_hr_admin():
-            if st.button("💵 Financial Records", use_container_width=True):
-                st.session_state.current_page = 'financial'
-                st.rerun()
-
-        # Recruitment (HR & Manager)
-        if is_hr_admin() or is_manager():
-            if st.button("💼 Recruitment", use_container_width=True):
-                st.session_state.current_page = 'recruitment'
-                st.rerun()
-
-        # Training
-        if st.button("🎓 Training & Development", use_container_width=True):
-            st.session_state.current_page = 'training'
-            st.rerun()
-
-        # Timesheets
-        if st.button("⏰ Timesheets", use_container_width=True):
-            st.session_state.current_page = 'timesheets'
-            st.rerun()
-
-        # Assets (HR & Manager)
-        if is_hr_admin() or is_manager():
-            if st.button("💻 Asset Management", use_container_width=True):
-                st.session_state.current_page = 'assets'
-                st.rerun()
-
-        # Career Development (All users)
-        if st.button("🚀 Career Development", use_container_width=True):
-            st.session_state.current_page = 'career'
-            st.rerun()
-
-        # Exit Management (HR & Manager)
-        if is_hr_admin() or is_manager():
-            if st.button("🚪 Exit Management", use_container_width=True):
-                st.session_state.current_page = 'exit'
-                st.rerun()
-
-        # Documents
-        if st.button("📁 Documents", use_container_width=True):
-            st.session_state.current_page = 'documents'
-            st.rerun()
-
-
-        # Employee Directory
-        if st.button("📇 Directory", use_container_width=True):
-            st.session_state.current_page = 'directory'
-            st.rerun()
-
-        # Org Chart
-        if st.button("🏢 Org Chart", use_container_width=True):
-            st.session_state.current_page = 'org_chart'
-            st.rerun()
-
-        # Reports & Analytics
-        if is_hr_admin() or is_manager():
-            if st.button("📊 Reports", use_container_width=True):
-                st.session_state.current_page = 'reports'
-                st.rerun()
-
-        # Shift Scheduling
-        if is_hr_admin() or is_manager():
-            if st.button("📅 Shift Scheduling", use_container_width=True):
-                st.session_state.current_page = 'shifts'
-                st.rerun()
-
-
-        # Calendar
-        if st.button("📅 Calendar", use_container_width=True):
-            st.session_state.current_page = 'calendar'
-            st.rerun()
-
-        # Admin Panel
-        if is_hr_admin():
-            if st.button("⚙️ Admin Panel", use_container_width=True):
-                st.session_state.current_page = 'admin'
-                st.rerun()
-
-            # Teams & Positions
-            if st.button("🏢 Teams & Positions", use_container_width=True):
-                st.session_state.current_page = 'teams_positions'
-                st.rerun()
-
-            # Skill Matrix
-            if st.button("🎯 Skill Matrix", use_container_width=True):
-                st.session_state.current_page = 'skill_matrix'
-                st.rerun()
-
-            # Workflow Management (Function Tree)
-            if st.button("🌳 Function Organization", use_container_width=True):
-                st.session_state.current_page = 'workflow_management'
-                st.rerun()
-
-        # Workflow Builder (Manager & HR)
-        if is_hr_admin() or is_manager():
-            if st.button("🔄 Workflow Builder", use_container_width=True):
-                st.session_state.current_page = 'workflow_builder'
-                st.rerun()
-
-        # Promotion Workflow
-        if st.button("🚀 Promotions", use_container_width=True):
-            st.session_state.current_page = 'promotions'
-            st.rerun()
-
-        # Contract Renewal
-        if st.button("📄 Contract Renewal", use_container_width=True):
-            st.session_state.current_page = 'contract_renewal'
-            st.rerun()
-
-        # Certificate Tracking
-        if st.button("🎓 Certificate Tracking", use_container_width=True):
-            st.session_state.current_page = 'certificate_tracking'
-            st.rerun()
-
-        # Document Approval
-        if st.button("📋 Document Approval", use_container_width=True):
-            st.session_state.current_page = 'document_approval'
-            st.rerun()
-
-        # Asset Procurement
-        if st.button("💼 Asset Procurement", use_container_width=True):
-            st.session_state.current_page = 'asset_procurement'
-            st.rerun()
-
-        if st.button("💰 Budget Management", use_container_width=True):
-            st.session_state.current_page = 'budget_management'
-            st.rerun()
-
-        if st.button("🎯 Goals & OKRs", use_container_width=True):
-            st.session_state.current_page = 'goal_okr'
-            st.rerun()
-
-        if st.button("📋 Compliance Tracking", use_container_width=True):
-            st.session_state.current_page = 'compliance'
-            st.rerun()
-
-        if st.button("🔄 Succession Planning", use_container_width=True):
-            st.session_state.current_page = 'succession'
-            st.rerun()
-
-        if st.button("📋 Onboarding Tasks", use_container_width=True):
-            st.session_state.current_page = 'onboarding'
-            st.rerun()
-
-        if st.button("📈 PIP Management", use_container_width=True):
-            st.session_state.current_page = 'pip'
-            st.rerun()
-
-        if st.button("🏥 Insurance", use_container_width=True):
-            st.session_state.current_page = 'insurance'
-            st.rerun()
-
-        if st.button("🔄 Shift Swap", use_container_width=True):
-            st.session_state.current_page = 'shift_swap'
-            st.rerun()
-
-        if st.button("📢 Announcements", use_container_width=True):
-            st.session_state.current_page = 'announcements'
-            st.rerun()
-
-        if st.button("📊 Surveys", use_container_width=True):
-            st.session_state.current_page = 'surveys'
-            st.rerun()
-
-        if st.button("⚖️ Appraisal Calibration", use_container_width=True):
-            st.session_state.current_page = 'calibration'
-            st.rerun()
-
-        # Email Integration
-        if is_hr_admin():
-            if st.button("📧 Email Settings", use_container_width=True):
-                st.session_state.current_page = 'email'
-                st.rerun()
-
-        # Mobile View
-        if st.button("📱 Mobile View", use_container_width=True):
+        # Mobile View - Always available
+        st.markdown("---")
+        if st.button("📱 Mobile View", key="mobile", use_container_width=True):
             st.session_state.current_page = 'mobile'
             st.rerun()
 
