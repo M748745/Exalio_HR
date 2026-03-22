@@ -155,7 +155,7 @@ def show_all_announcements_admin():
                     **Priority:** {announcement['priority']}
                     **Target:** {announcement['target_audience']} {f"({announcement['target_department']})" if announcement.get('target_department') else ''}
                     **Status:** {announcement['status']}
-                    **Created:** {announcement['created_at'][:10]}
+                    **Created:** {str(announcement['created_at'])[:10] if announcement.get('created_at') else 'N/A'}
                     **Created By:** {announcement.get('first_name', 'N/A')} {announcement.get('last_name', '')}
                     """)
 

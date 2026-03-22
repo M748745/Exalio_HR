@@ -55,7 +55,7 @@ def show_my_pip():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT p.*, m.first_name as manager_first, m.last_name as manager_last
-            FROM performance_improvement_plans p
+            FROM pips p
             LEFT JOIN employees m ON p.manager_id = m.id
             WHERE p.emp_id = %s
             AND p.status IN ('Active', 'In Progress')
@@ -145,7 +145,7 @@ def show_pip_progress():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT * FROM performance_improvement_plans
+            SELECT * FROM pips
             WHERE emp_id = %s
             ORDER BY created_at DESC
             LIMIT 1
@@ -186,7 +186,7 @@ def show_team_pips():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT p.*, e.first_name, e.last_name, e.employee_id
-            FROM performance_improvement_plans p
+            FROM pips p
             JOIN employees e ON p.emp_id = e.id
             WHERE p.manager_id = %s
             ORDER BY p.status, p.start_date DESC
@@ -419,26 +419,26 @@ def show_pip_analytics():
         cursor = conn.cursor()
 
         # Total PIPs
-        cursor.execute("SELECT COUNT(*) as cnt FROM performance_improvement_plans")
+        cursor.execute("SELECT COUNT(*) as cnt FROM pips")
         total = cursor.fetchone()['cnt']
 
         # Active PIPs
         cursor.execute("""
-            SELECT COUNT(*) as cnt FROM performance_improvement_plans
+            SELECT COUNT(*) as cnt FROM pips
             WHERE status IN ('Active', 'In Progress')
         """)
         active = cursor.fetchone()['cnt']
 
         # Completed successfully
         cursor.execute("""
-            SELECT COUNT(*) as cnt FROM performance_improvement_plans
+            SELECT COUNT(*) as cnt FROM pips
             WHERE status = 'Completed'
         """)
         completed = cursor.fetchone()['cnt']
 
         # Success rate
         cursor.execute("""
-            SELECT COUNT(*) as cnt FROM performance_improvement_plans
+            SELECT COUNT(*) as cnt FROM pips
             WHERE status IN ('Completed', 'Cancelled')
         """)
         finished = cursor.fetchone()['cnt']
@@ -462,7 +462,7 @@ def show_pip_analytics():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT status, COUNT(*) as count
-            FROM performance_improvement_plans
+            FROM pips
             GROUP BY status
             ORDER BY count DESC
         """)
@@ -480,7 +480,7 @@ def create_pip(emp_id, manager_id, reason, goals, expected_outcomes, start_date,
             cursor = conn.cursor()
 
             cursor.execute("""
-                INSERT INTO performance_improvement_plans (
+                INSERT INTO pips (
                     emp_id, manager_id, reason, goals, expected_outcomes,
                     start_date, end_date, status
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'Active')
@@ -514,14 +514,14 @@ def complete_pip(pip_id, status):
             cursor = conn.cursor()
 
             cursor.execute("""
-                UPDATE performance_improvement_plans SET
+                UPDATE pips SET
                     status = %s,
                     end_date = %s
                 WHERE id = %s
             """, (status, datetime.now().isoformat(), pip_id))
 
             # Get employee for notification
-            cursor.execute("SELECT emp_id FROM performance_improvement_plans WHERE id = %s", (pip_id,))
+            cursor.execute("SELECT emp_id FROM pips WHERE id = %s", (pip_id,))
             pip = cursor.fetchone()
 
             if pip:
@@ -550,7 +550,7 @@ def add_pip_checkin(pip_id, checkin_date, notes):
 
             # Update PIP status to In Progress
             cursor.execute("""
-                UPDATE performance_improvement_plans SET status = 'In Progress'
+                UPDATE pips SET status = 'In Progress'
                 WHERE id = %s AND status = 'Active'
             """, (pip_id,))
 
