@@ -340,7 +340,8 @@ def show_asset_assignments():
             """)
             assignments = [dict(row) for row in cursor.fetchall()]
         except Exception:
-            # Fallback without employee_id
+            # Rollback failed transaction and retry
+            conn.rollback()
             cursor.execute("""
                 SELECT a.*, e.first_name, e.last_name, e.department
                 FROM assets a

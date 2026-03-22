@@ -315,7 +315,8 @@ def show_all_enrollments():
             cursor.execute(query, params)
             enrollments = [dict(row) for row in cursor.fetchall()]
         except Exception as e:
-            # Fallback: minimal query without employee_id
+            # Rollback failed transaction and retry with minimal query
+            conn.rollback()
             query = """
                 SELECT e.*, c.title as course_title, c.category, c.cost,
                        emp.first_name, emp.last_name, emp.department
