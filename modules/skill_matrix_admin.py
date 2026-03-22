@@ -48,7 +48,7 @@ def manage_skills():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.*,
+            SELECT s.id, s.skill_name, s.category, s.description, s.created_at, s.updated_at,
                    COUNT(DISTINCT ts.team_id) as team_count,
                    COUNT(DISTINCT es.emp_id) as employee_count
             FROM skills s

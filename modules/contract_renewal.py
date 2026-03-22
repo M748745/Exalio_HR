@@ -146,7 +146,7 @@ def show_all_contracts():
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
-                    if contract['status'] == 'Active' and days_remaining <= 90:
+                    if contract['status'] == 'Active' and days_remaining is not None and days_remaining <= 90:
                         if st.button("🔄 Initiate Renewal", key=f"renew_{contract['id']}", use_container_width=True):
                             initiate_renewal(contract['id'], contract['emp_id'])
                             st.rerun()

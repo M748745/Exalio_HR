@@ -355,14 +355,16 @@ def show_asset_assignments():
     if assignments:
         for assignment in assignments:
             status_icon = '🟢' if assignment['status'] == 'Assigned' else '⚪'
+            assigned_date_str = str(assignment['assigned_date'])[:10] if assignment.get('assigned_date') else 'N/A'
+            return_date_str = f" • Returned: {str(assignment['return_date'])[:10]}" if assignment.get('return_date') else ""
             st.markdown(f"""
                 <div style="background: rgba(58, 123, 213, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
                     {status_icon} <strong>{assignment['asset_name']}</strong> →
                     {assignment['first_name']} {assignment['last_name']} ({assignment['employee_id']})<br>
                     <small style="color: #7d96be;">
                         Department: {assignment['department']} •
-                        Assigned: {assignment['assigned_date'][:10] if assignment['assigned_date'] else 'N/A'}
-                        {f" • Returned: {assignment['return_date'][:10]}" if assignment['return_date'] else ""}
+                        Assigned: {assigned_date_str}
+                        {return_date_str}
                     </small>
                 </div>
             """, unsafe_allow_html=True)

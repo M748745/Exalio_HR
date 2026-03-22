@@ -159,7 +159,7 @@ def show_compliance_requirements():
         params = []
 
         if category_filter != "All":
-            query += " AND category = %s"
+            query += " AND requirement_type = %s"
             params.append(category_filter)
 
         if status_filter != "All":

@@ -65,7 +65,7 @@ def show_all_certificates():
                 e.department,
                 e.position,
                 c.certificate_name,
-                c.issuing_organization,
+                c.issuing_org as issuing_organization,
                 c.issue_date,
                 c.expiry_date,
                 c.status,
@@ -122,9 +122,7 @@ def show_all_certificates():
                     **Department:** {cert['department']}
                     **Position:** {cert['position']}
                     **Certificate:** {cert['certificate_name']}
-                    **Type:** {cert['certificate_type']}
-                    **Certificate #:** {cert['certificate_number'] or 'N/A'}
-                    **Issuing Authority:** {cert['issuing_authority']}
+                    **Issuing Organization:** {cert.get('issuing_organization', cert.get('issuing_org', 'N/A'))}
                     **Issue Date:** {cert['issue_date']}
                     **Expiry Date:** {cert['expiry_date']}
                     **Status:** {cert['status']}
@@ -179,7 +177,7 @@ def show_expiring_certificates():
                     e.first_name || ' ' || e.last_name as name,
                     e.department,
                     c.certificate_name,
-                    c.certificate_type,
+                    c.issuing_org,
                     c.expiry_date,
                     c.status,
                     (c.expiry_date - CURRENT_DATE) as days_remaining
@@ -198,7 +196,7 @@ def show_expiring_certificates():
                     e.id as employee_id,
                     e.first_name || ' ' || e.last_name as name,
                     c.certificate_name,
-                    c.certificate_type,
+                    c.issuing_org,
                     c.expiry_date,
                     c.status,
                     (c.expiry_date - CURRENT_DATE) as days_remaining
@@ -215,7 +213,7 @@ def show_expiring_certificates():
                 SELECT
                     c.id,
                     c.certificate_name,
-                    c.certificate_type,
+                    c.issuing_org,
                     c.expiry_date,
                     c.status,
                     (c.expiry_date - CURRENT_DATE) as days_remaining
