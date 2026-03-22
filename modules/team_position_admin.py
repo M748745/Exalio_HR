@@ -106,7 +106,7 @@ def manage_teams():
                 with st.expander("View Details", expanded=False):
                     st.markdown(f"**Description:** {team['description'] or 'No description'}")
                     st.markdown(f"**Created:** {team['created_at']}")
-                    st.markdown(f"**Last Updated:** {team['updated_at']}")
+                    # updated_at column doesn't exist in teams table - removed
 
                 st.markdown("---")
     else:

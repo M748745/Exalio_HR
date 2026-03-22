@@ -190,12 +190,12 @@ def show_pending_approvals():
                     d.document_type,
                     d.version,
                     d.description,
-                    d.created_by,
+                    d.uploaded_by,
                     e.first_name || ' ' || e.last_name as author_name,
                     d.created_at,
                     d.approval_notes
                 FROM documents d
-                LEFT JOIN employees e ON d.created_by = e.id
+                LEFT JOIN employees e ON d.uploaded_by = e.id
                 WHERE d.approval_status = 'Pending'
                 ORDER BY d.created_at ASC
             """)
@@ -209,12 +209,12 @@ def show_pending_approvals():
                     d.document_type,
                     d.version,
                     d.description,
-                    d.created_by,
+                    d.uploaded_by,
                     e.first_name || ' ' || e.last_name as author_name,
                     d.created_at,
                     d.approval_notes
                 FROM documents d
-                LEFT JOIN employees e ON d.created_by = e.id
+                LEFT JOIN employees e ON d.uploaded_by = e.id
                 WHERE d.approval_status = 'Pending'
                 AND d.requires_manager_approval = 1
                 AND e.manager_id = %s

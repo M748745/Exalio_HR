@@ -206,14 +206,15 @@ def show_rating_distribution():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT
-                rating,
+                overall_rating as rating,
                 COUNT(*) as count,
                 ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) as percentage
             FROM appraisals
             WHERE status IN ('Manager Review', 'HR Review', 'Finalized')
-            GROUP BY rating
+              AND overall_rating IS NOT NULL
+            GROUP BY overall_rating
             ORDER BY
-                CASE rating
+                CASE overall_rating
                     WHEN 'Outstanding' THEN 1
                     WHEN 'Exceeds Expectations' THEN 2
                     WHEN 'Meets Expectations' THEN 3

@@ -76,7 +76,7 @@ def show_all_goals():
             with st.expander(f"{status_icon} {goal['first_name']} {goal['last_name']} ({goal['department']}) - {goal['goal_title']} - {progress}%"):
                 col1, col2 = st.columns([2, 1])
                 with col1:
-                    st.write(f"**Type:** {goal['goal_type']}")
+                    # goal_type column doesn't exist - removed
                     st.write(f"**Description:** {goal['description']}")
                     st.write(f"**Period:** {goal['review_period']}")
                     if goal.get('key_results'):

@@ -595,7 +595,7 @@ def show_approved_requests():
             FROM asset_requests ar
             JOIN employees e ON ar.emp_id = e.id
             WHERE ar.status = 'Approved - Procurement'
-            ORDER BY ar.urgency DESC, ar.requested_date ASC
+            ORDER BY ar.requested_date ASC
         """)
         approved = [dict(row) for row in cursor.fetchall()]
 

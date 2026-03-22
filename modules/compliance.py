@@ -96,15 +96,16 @@ def show_compliance_overview():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT * FROM audit_logs
-            WHERE module = 'compliance'
-            ORDER BY created_at DESC
+            WHERE entity_type = 'compliance'
+            ORDER BY timestamp DESC
             LIMIT 10
         """)
         recent = [dict(row) for row in cursor.fetchall()]
 
     if recent:
         for activity in recent:
-            st.markdown(f"- {activity['action']} _{activity['created_at'][:16]}_")
+            timestamp_str = str(activity['timestamp'])[:16] if activity.get('timestamp') else 'N/A'
+            st.markdown(f"- {activity.get('action', 'Unknown')} _{timestamp_str}_")
     else:
         st.info("No recent activity")
 

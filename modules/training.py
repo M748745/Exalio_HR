@@ -373,12 +373,12 @@ def show_pending_approvals():
             # HR sees manager-approved requests
             cursor.execute("""
                 SELECT e.*, c.title as course_title, c.category, c.cost, c.provider,
-                       emp.first_name, emp.last_name, emp.id as employee_id, emp.department
+                       emp.first_name, emp.last_name, emp.employee_id, emp.department
                 FROM training_enrollments e
                 JOIN training_catalog c ON e.course_id = c.id
                 JOIN employees emp ON e.emp_id = emp.id
                 WHERE e.status = 'Approved'
-                ORDER BY e.created_at ASC
+                ORDER BY e.enrollment_date ASC
             """)
         elif is_manager():
             # Manager sees team requests

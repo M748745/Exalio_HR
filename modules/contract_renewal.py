@@ -132,11 +132,11 @@ def show_all_contracts():
                     """)
 
                 with col2:
-                    if days_remaining >= 0:
+                    if days_remaining is not None and days_remaining >= 0:
                         st.metric("Days Remaining", f"{days_remaining} days",
                                  delta=f"{days_remaining} days left",
                                  delta_color="inverse" if days_remaining <= 30 else "normal")
-                    else:
+                    elif days_remaining is not None:
                         st.metric("Status", "EXPIRED",
                                  delta=f"{abs(days_remaining)} days ago",
                                  delta_color="inverse")

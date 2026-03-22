@@ -79,18 +79,15 @@ def show_all_certificates():
 
     if certificates:
         # Filters
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
-            type_filter = st.selectbox("Type", ["All"] + list(set([c['certificate_type'] for c in certificates if c['certificate_type']])))
+            dept_filter = st.selectbox("Department", ["All"] + list(set([c['department'] for c in certificates if c.get('department')])))
         with col2:
-            dept_filter = st.selectbox("Department", ["All"] + list(set([c['department'] for c in certificates if c['department']])))
-        with col3:
             status_filter = st.selectbox("Status", ["All", "Active", "Expiring Soon", "Renewal Pending"])
 
         # Apply filters
         filtered = certificates
-        if type_filter != "All":
-            filtered = [c for c in filtered if c['certificate_type'] == type_filter]
+        # Removed type_filter since certificate_type column doesn't exist
         if dept_filter != "All":
             filtered = [c for c in filtered if c['department'] == dept_filter]
         if status_filter != "All":
