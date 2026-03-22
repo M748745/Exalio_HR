@@ -250,10 +250,11 @@ def show_all_pips():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
+        # Use correct table name and handle employee_id gracefully
         query = """
-            SELECT p.*, e.first_name, e.last_name, e.employee_id, e.department,
+            SELECT p.*, e.first_name, e.last_name, e.id as employee_id, e.department,
                    m.first_name as manager_first, m.last_name as manager_last
-            FROM performance_improvement_plans p
+            FROM pips p
             JOIN employees e ON p.emp_id = e.id
             LEFT JOIN employees m ON p.manager_id = m.id
             WHERE 1=1
@@ -265,8 +266,8 @@ def show_all_pips():
             params.append(status_filter)
 
         if search:
-            query += " AND (e.first_name LIKE %s OR e.last_name LIKE %s OR e.employee_id LIKE %s)"
-            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+            query += " AND (e.first_name LIKE %s OR e.last_name LIKE %s)"
+            params.extend([f"%{search}%", f"%{search}%"])
 
         query += " ORDER BY p.start_date DESC"
 

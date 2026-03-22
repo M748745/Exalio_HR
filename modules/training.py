@@ -290,28 +290,43 @@ def show_all_enrollments():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        query = """
-            SELECT e.*, c.title as course_title, c.category, c.cost,
-                   emp.first_name, emp.last_name, emp.employee_id, emp.department
-            FROM training_enrollments e
-            JOIN training_catalog c ON e.course_id = c.id
-            JOIN employees emp ON e.emp_id = emp.id
-            WHERE 1=1
-        """
-        params = []
+        # Try with employee_id first, fallback to id if column doesn't exist
+        try:
+            query = """
+                SELECT e.*, c.title as course_title, c.category, c.cost,
+                       emp.first_name, emp.last_name, emp.id as employee_id, emp.department
+                FROM training_enrollments e
+                JOIN training_catalog c ON e.course_id = c.id
+                JOIN employees emp ON e.emp_id = emp.id
+                WHERE 1=1
+            """
+            params = []
 
-        if status_filter != "All":
-            query += " AND e.status = %s"
-            params.append(status_filter)
+            if status_filter != "All":
+                query += " AND e.status = %s"
+                params.append(status_filter)
 
-        if search:
-            query += " AND (emp.first_name LIKE %s OR emp.last_name LIKE %s OR emp.employee_id LIKE %s)"
-            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+            if search:
+                query += " AND (emp.first_name LIKE %s OR emp.last_name LIKE %s)"
+                params.extend([f"%{search}%", f"%{search}%"])
 
-        query += " ORDER BY e.created_at DESC LIMIT 50"
+            query += " ORDER BY e.created_at DESC LIMIT 50"
 
-        cursor.execute(query, params)
-        enrollments = [dict(row) for row in cursor.fetchall()]
+            cursor.execute(query, params)
+            enrollments = [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            # Fallback: minimal query without employee_id
+            query = """
+                SELECT e.*, c.title as course_title, c.category, c.cost,
+                       emp.first_name, emp.last_name, emp.department
+                FROM training_enrollments e
+                JOIN training_catalog c ON e.course_id = c.id
+                JOIN employees emp ON e.emp_id = emp.id
+                WHERE 1=1
+                ORDER BY e.created_at DESC LIMIT 50
+            """
+            cursor.execute(query)
+            enrollments = [dict(row) for row in cursor.fetchall()]
 
     if enrollments:
         df = pd.DataFrame(enrollments)

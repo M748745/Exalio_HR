@@ -328,15 +328,28 @@ def show_asset_assignments():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
-            FROM assets a
-            LEFT JOIN employees e ON a.assigned_to = e.id
-            WHERE a.status IN ('Assigned', 'Returned')
-            ORDER BY a.assigned_date DESC
-            LIMIT 50
-        """)
-        assignments = [dict(row) for row in cursor.fetchall()]
+        try:
+            # Try with employee_id, use id as fallback
+            cursor.execute("""
+                SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.department
+                FROM assets a
+                LEFT JOIN employees e ON a.assigned_to = e.id
+                WHERE a.status IN ('Assigned', 'Returned')
+                ORDER BY a.assigned_date DESC
+                LIMIT 50
+            """)
+            assignments = [dict(row) for row in cursor.fetchall()]
+        except Exception:
+            # Fallback without employee_id
+            cursor.execute("""
+                SELECT a.*, e.first_name, e.last_name, e.department
+                FROM assets a
+                LEFT JOIN employees e ON a.assigned_to = e.id
+                WHERE a.status IN ('Assigned', 'Returned')
+                ORDER BY a.assigned_date DESC
+                LIMIT 50
+            """)
+            assignments = [dict(row) for row in cursor.fetchall()]
 
     if assignments:
         for assignment in assignments:
