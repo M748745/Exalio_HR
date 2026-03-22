@@ -98,10 +98,13 @@ def show_all_contracts():
 
         # Display contracts
         for contract in filtered:
-            days_remaining = contract['days_remaining']
+            days_remaining = contract.get('days_remaining')
 
             # Color coding based on days remaining
-            if days_remaining < 0:
+            if days_remaining is None:
+                status_color = 'rgba(200, 200, 200, 0.1)'  # Gray - Unknown
+                status_emoji = "⚪"
+            elif days_remaining < 0:
                 status_color = 'rgba(241, 100, 100, 0.1)'  # Red - Expired
                 status_emoji = "🔴"
             elif days_remaining <= 30:

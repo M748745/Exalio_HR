@@ -68,7 +68,7 @@ def show_all_documents():
                 d.version,
                 d.status,
                 d.access_level,
-                d.created_by,
+                d.uploaded_by,
                 e.first_name || ' ' || e.last_name as author_name,
                 d.created_at,
                 d.approval_status,
@@ -76,7 +76,7 @@ def show_all_documents():
                 d.expiry_date,
                 COALESCE(d.download_count, 0) as downloads
             FROM documents d
-            LEFT JOIN employees e ON d.created_by = e.id
+            LEFT JOIN employees e ON d.uploaded_by = e.id
             ORDER BY d.created_at DESC
         """)
         documents = [dict(row) for row in cursor.fetchall()]
