@@ -314,7 +314,7 @@ def show_audit_logs():
         cursor = conn.cursor()
 
         query = """
-            SELECT al.*, e.first_name, e.last_name, e.employee_id
+            SELECT al.*, e.first_name, e.last_name, e.id as employee_id
             FROM audit_logs al
             LEFT JOIN employees e ON al.user_id = e.id
             WHERE date(al.created_at) BETWEEN %s AND %s

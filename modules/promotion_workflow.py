@@ -298,10 +298,10 @@ def show_pending_approvals():
             # HR sees manager-approved requests
             cursor.execute("""
                 SELECT pr.*, e.first_name, e.last_name, e.employee_id, e.department,
-                       m.first_name || ' ' || m.last_name as nominated_by_name
+                       m.first_name || ' ' || m.last_name as requested_by_name
                 FROM promotion_requests pr
                 JOIN employees e ON pr.emp_id = e.id
-                LEFT JOIN employees m ON pr.nominated_by = m.id
+                LEFT JOIN employees m ON pr.requested_by = m.id
                 WHERE pr.status IN ('Manager Approved', 'HR Review', 'Budget Approved')
                 ORDER BY pr.created_at DESC
             """)

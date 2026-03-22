@@ -65,12 +65,10 @@ def show_all_certificates():
                 e.department,
                 e.position,
                 c.certificate_name,
-                c.certificate_type,
-                c.issuing_authority,
+                c.issuing_organization,
                 c.issue_date,
                 c.expiry_date,
                 c.status,
-                c.certificate_number,
                 (c.expiry_date - CURRENT_DATE) as days_remaining
             FROM certificates c
             JOIN employees e ON c.emp_id = e.id
@@ -180,7 +178,7 @@ def show_expiring_certificates():
                 SELECT
                     c.id,
                     c.emp_id,
-                    e.employee_id,
+                    e.id as employee_id,
                     e.first_name || ' ' || e.last_name as name,
                     e.department,
                     c.certificate_name,
@@ -200,7 +198,7 @@ def show_expiring_certificates():
                 SELECT
                     c.id,
                     c.emp_id,
-                    e.employee_id,
+                    e.id as employee_id,
                     e.first_name || ' ' || e.last_name as name,
                     c.certificate_name,
                     c.certificate_type,
@@ -656,7 +654,7 @@ def show_team_certificates():
         cursor.execute("""
             SELECT
                 c.*,
-                e.employee_id,
+                e.id as employee_id,
                 e.first_name || ' ' || e.last_name as name,
                 (c.expiry_date - CURRENT_DATE) as days_remaining
             FROM certificates c

@@ -60,11 +60,11 @@ def show_all_goals():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT g.*, e.first_name, e.last_name, e.department
+            SELECT g.*, e.first_name, e.last_name, e.department, e.employee_id
             FROM goals g
             JOIN employees e ON g.emp_id = e.id
             WHERE g.status != 'Cancelled'
-            ORDER BY g.review_period DESC, g.goal_type, e.department
+            ORDER BY g.review_period DESC, e.department
         """)
         goals = [dict(row) for row in cursor.fetchall()]
 

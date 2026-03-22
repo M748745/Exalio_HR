@@ -246,7 +246,7 @@ def show_bonus_records():
         cursor = conn.cursor()
 
         query = """
-            SELECT b.*, e.first_name, e.last_name, e.employee_id, e.department
+            SELECT b.*, e.first_name, e.last_name, e.id as employee_id, e.department
             FROM bonuses b
             JOIN employees e ON b.emp_id = e.id
             WHERE 1=1
@@ -379,7 +379,7 @@ def show_bonus_approvals():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT b.*,
-                   e.first_name, e.last_name, e.employee_id, e.position, e.department,
+                   e.first_name, e.last_name, e.id as employee_id, e.position, e.department,
                    mgr.first_name || ' ' || mgr.last_name as manager_name
             FROM bonuses b
             JOIN employees e ON b.emp_id = e.id

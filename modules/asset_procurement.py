@@ -184,13 +184,9 @@ def show_pending_requests():
                     e.first_name || ' ' || e.last_name as requester_name,
                     e.department,
                     ar.asset_type,
-                    ar.asset_description,
                     ar.justification,
-                    ar.estimated_cost,
-                    ar.urgency,
                     ar.status,
-                    ar.requested_date,
-                    ar.manager_status
+                    ar.requested_date
                 FROM asset_requests ar
                 JOIN employees e ON ar.emp_id = e.id
                 WHERE ar.status IN ('Pending', 'Manager Approved')
@@ -202,7 +198,7 @@ def show_pending_requests():
                 SELECT
                     ar.id,
                     ar.emp_id,
-                    e.employee_id,
+                    e.id as employee_id,
                     e.first_name || ' ' || e.last_name as requester_name,
                     ar.asset_type,
                     ar.asset_description,
@@ -726,7 +722,7 @@ def show_team_assets():
         cursor.execute("""
             SELECT
                 a.*,
-                e.employee_id,
+                e.id as employee_id,
                 e.first_name || ' ' || e.last_name as emp_name
             FROM assets a
             JOIN employees e ON a.assigned_to = e.id

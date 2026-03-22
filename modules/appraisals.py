@@ -171,7 +171,7 @@ def show_team_appraisals():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.position
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.position
             FROM appraisals a
             JOIN employees e ON a.emp_id = e.id
             WHERE e.manager_id = %s OR a.manager_id = %s
@@ -217,7 +217,7 @@ def show_pending_manager_review():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.position
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.position
             FROM appraisals a
             JOIN employees e ON a.emp_id = e.id
             WHERE (e.manager_id = %s OR a.manager_id = %s) AND a.status = 'Submitted'
@@ -251,7 +251,7 @@ def show_all_appraisals():
         cursor = conn.cursor()
 
         query = """
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department, e.position
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.department, e.position
             FROM appraisals a
             JOIN employees e ON a.emp_id = e.id
             WHERE 1=1
@@ -289,7 +289,7 @@ def show_pending_hr_review():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.department
             FROM appraisals a
             JOIN employees e ON a.emp_id = e.id
             WHERE a.status = 'HR Review'
@@ -313,7 +313,7 @@ def show_completed_appraisals():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.department
             FROM appraisals a
             JOIN employees e ON a.emp_id = e.id
             WHERE a.status = 'Completed'

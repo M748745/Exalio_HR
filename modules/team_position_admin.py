@@ -54,7 +54,7 @@ def manage_teams():
             LEFT JOIN positions p ON p.team_id = t.id
             LEFT JOIN employees emp ON emp.team_tag = t.team_name OR emp.department = t.department
             GROUP BY t.id, t.team_name, t.department, t.team_lead_id, t.description,
-                     t.status, t.created_at, t.updated_at, e.first_name, e.last_name
+                     t.status, t.created_at, e.first_name, e.last_name
             ORDER BY t.team_name
         """)
         teams = cursor.fetchall()

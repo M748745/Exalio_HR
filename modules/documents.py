@@ -247,8 +247,8 @@ def show_all_documents():
         # visibility_filter removed - column doesn't exist in schema
 
         if search:
-            query += " AND d.document_name LIKE %s"
-            params.append(f"%{search}%")
+            query += " AND (d.title LIKE %s OR d.file_name LIKE %s)"
+            params.extend([f"%{search}%", f"%{search}%"])
 
         query += " ORDER BY d.created_at DESC LIMIT 50"
 
@@ -258,18 +258,21 @@ def show_all_documents():
     if documents:
         df = pd.DataFrame(documents)
         # Use only columns that exist in schema
-        available_cols = [col for col in ['document_name', 'document_type', 'status', 'created_at'] if col in df.columns]
+        available_cols = [col for col in ['title', 'document_type', 'status', 'created_at'] if col in df.columns]
         df_display = df[available_cols].copy()
 
         # Rename columns for display
         col_mapping = {
-            'document_name': 'Document',
+            'title': 'Document',
             'document_type': 'Type',
             'status': 'Status',
             'created_at': 'Uploaded'
         }
         df_display = df_display.rename(columns={k: v for k, v in col_mapping.items() if k in df_display.columns})
-        df_display['Uploaded'] = df_display['Uploaded'].str[:10]
+
+        # Format the date properly - convert to string if it's a datetime
+        if 'Uploaded' in df_display.columns:
+            df_display['Uploaded'] = pd.to_datetime(df_display['Uploaded']).dt.strftime('%Y-%m-%d')
 
         st.dataframe(df_display, use_container_width=True, hide_index=True)
 

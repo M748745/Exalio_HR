@@ -206,7 +206,7 @@ def show_team_career_plans():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT cp.*, e.first_name, e.last_name, e.employee_id, e.position
+            SELECT cp.*, e.first_name, e.last_name, e.id as employee_id, e.position
             FROM career_plans cp
             JOIN employees e ON cp.emp_id = e.id
             WHERE e.manager_id = %s
@@ -330,7 +330,7 @@ def show_all_career_plans():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT cp.*, e.first_name, e.last_name, e.employee_id, e.department
+            SELECT cp.*, e.first_name, e.last_name, e.id as employee_id, e.department
             FROM career_plans cp
             JOIN employees e ON cp.emp_id = e.id
             ORDER BY cp.created_at DESC

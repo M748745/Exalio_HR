@@ -152,7 +152,7 @@ def show_team_assets():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id
             FROM assets a
             LEFT JOIN employees e ON a.assigned_to = e.id
             WHERE e.manager_id = %s AND a.status = 'Assigned'
@@ -187,7 +187,7 @@ def show_all_assets():
         cursor = conn.cursor()
 
         query = """
-            SELECT a.*, e.first_name, e.last_name, e.employee_id
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id
             FROM assets a
             LEFT JOIN employees e ON a.assigned_to = e.id
             WHERE 1=1

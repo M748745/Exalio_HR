@@ -124,7 +124,7 @@ def show_all_announcements_admin():
         cursor = conn.cursor()
 
         query = """
-            SELECT a.*, e.first_name, e.last_name, e.employee_id
+            SELECT a.*, e.first_name, e.last_name, e.id as employee_id
             FROM announcements a
             LEFT JOIN employees e ON a.created_by = e.id
             WHERE 1=1

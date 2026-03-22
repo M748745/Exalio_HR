@@ -59,14 +59,14 @@ def show_compliance_overview():
         # Overdue
         cursor.execute("""
             SELECT COUNT(*) as cnt FROM compliance_requirements
-            WHERE next_review_date < CURRENT_DATE AND status != 'Compliant'
+            WHERE due_date < CURRENT_DATE AND status != 'Compliant'
         """)
         overdue = cursor.fetchone()['cnt']
 
         # Upcoming reviews (next 30 days)
         cursor.execute("""
             SELECT COUNT(*) as cnt FROM compliance_requirements
-            WHERE next_review_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '30 days')
+            WHERE due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + INTERVAL '30 days')
         """)
         upcoming = cursor.fetchone()['cnt']
 
