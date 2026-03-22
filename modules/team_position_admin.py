@@ -81,8 +81,9 @@ def manage_teams():
                     st.caption(f"Positions: {team['position_count']}")
 
                 with col3:
-                    st.markdown(f"👤 {team['team_lead_name'] or 'No lead'}")
-                    st.caption(f"Employees: {team['employee_count']}")
+                    team_lead = team.get('team_lead_name') or 'No lead'
+                    st.markdown(f"👤 {team_lead}")
+                    st.caption(f"Employees: {team.get('employee_count', 0)}")
 
                 with col4:
                     st.markdown(f"**{team['status']}**")

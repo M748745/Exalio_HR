@@ -105,15 +105,15 @@ def show_nomination_form():
                 salary_record = cursor.fetchone()
                 current_salary = salary_record['base_salary'] if salary_record else 0
 
-                # Get latest performance rating
+                # Get latest performance rating from grades table
                 cursor.execute("""
-                    SELECT overall_grade FROM appraisals
-                    WHERE emp_id = %s AND status = 'Completed'
+                    SELECT overall_grade FROM grades
+                    WHERE emp_id = %s
                     ORDER BY created_at DESC
                     LIMIT 1
                 """, (selected_emp_id,))
-                appraisal = cursor.fetchone()
-                performance_rating = appraisal['overall_grade'] if appraisal else 'N/A'
+                grade_record = cursor.fetchone()
+                performance_rating = grade_record['overall_grade'] if grade_record else 'N/A'
 
             # Display current info
             col1, col2, col3 = st.columns(3)

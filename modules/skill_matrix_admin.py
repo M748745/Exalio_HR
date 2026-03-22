@@ -54,7 +54,7 @@ def manage_skills():
             FROM skills s
             LEFT JOIN team_skills ts ON s.id = ts.skill_id
             LEFT JOIN employee_skills es ON s.id = es.skill_id
-            GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at
+            GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at, s.updated_at
             ORDER BY s.category, s.skill_name
         """)
         skills = cursor.fetchall()

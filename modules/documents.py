@@ -313,14 +313,16 @@ def show_archived_documents():
         cursor.execute("""
             SELECT * FROM documents
             WHERE status = 'Archived'
-            ORDER BY updated_at DESC
+            ORDER BY created_at DESC
             LIMIT 20
         """)
         archived = [dict(row) for row in cursor.fetchall()]
 
     if archived:
         for doc in archived:
-            st.markdown(f"📦 **{doc['document_name']}** - Archived on {doc.get('updated_at', 'N/A')[:10]}")
+            archived_date = doc.get('archived_date') or doc.get('created_at', 'N/A')
+            archived_date_str = str(archived_date)[:10] if archived_date != 'N/A' else 'N/A'
+            st.markdown(f"📦 **{doc['document_name']}** - Archived on {archived_date_str}")
     else:
         st.info("No archived documents")
 

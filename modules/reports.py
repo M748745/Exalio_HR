@@ -119,7 +119,8 @@ def show_overview_report():
 
         if recent_activity:
             for activity in recent_activity:
-                st.markdown(f"- {activity['action']} _{activity['created_at'][:16]}_")
+                created_at_str = str(activity['created_at'])[:16] if activity.get('created_at') else 'N/A'
+                st.markdown(f"- {activity['action']} _{created_at_str}_")
 
 def show_workforce_analytics():
     """Show detailed workforce analytics"""
