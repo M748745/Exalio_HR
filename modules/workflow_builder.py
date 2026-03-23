@@ -9,6 +9,7 @@ import pandas as pd
 from datetime import datetime
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, is_manager
+import plotly.graph_objects as go
 
 # Define complete workflow configurations
 WORKFLOW_DEFINITIONS = {
@@ -547,45 +548,168 @@ def show_workflow_overview():
 
 
 def show_workflow_diagram(workflow_key):
-    """Display visual workflow diagram"""
+    """Display visual workflow diagram using Plotly Sankey"""
     st.markdown("---")
     workflow = WORKFLOW_DEFINITIONS[workflow_key]
 
     st.markdown(f"### 🔄 {workflow['name']} - Process Flow")
 
-    # Create visual representation
+    # Create Sankey diagram
+    try:
+        # Build nodes and links for Sankey diagram
+        nodes = []
+        node_labels = []
+        node_colors = []
+
+        # Role colors
+        role_colors_map = {
+            "employee": "rgba(66, 135, 245, 0.8)",    # Blue
+            "manager": "rgba(255, 165, 0, 0.8)",      # Orange
+            "hr_admin": "rgba(220, 53, 69, 0.8)",     # Red
+            "system": "rgba(40, 167, 69, 0.8)"        # Green
+        }
+
+        # Create nodes from steps
+        for step_data in workflow['steps']:
+            role_icon = {
+                "employee": "👤",
+                "manager": "👔",
+                "hr_admin": "🔑",
+                "system": "⚙️"
+            }.get(step_data['role'], "📌")
+
+            node_label = f"{role_icon} Step {step_data['step']}<br>{step_data['name']}"
+            node_labels.append(node_label)
+            node_colors.append(role_colors_map.get(step_data['role'], "rgba(128, 128, 128, 0.8)"))
+
+        # Add END node
+        node_labels.append("✅ END")
+        node_colors.append("rgba(108, 117, 125, 0.8)")
+
+        # Create links between steps
+        sources = []
+        targets = []
+        values = []
+        link_colors = []
+
+        for i, step_data in enumerate(workflow['steps']):
+            next_step = step_data.get('next_step')
+            next_step_approve = step_data.get('next_step_approve')
+            next_step_reject = step_data.get('next_step_reject')
+
+            if next_step_approve:
+                # Approval path
+                if next_step_approve != 'end':
+                    sources.append(i)
+                    targets.append(next_step_approve - 1)
+                    values.append(2)
+                    link_colors.append("rgba(40, 167, 69, 0.3)")
+                else:
+                    sources.append(i)
+                    targets.append(len(workflow['steps']))
+                    values.append(2)
+                    link_colors.append("rgba(40, 167, 69, 0.3)")
+
+                # Rejection path
+                if next_step_reject == 'end':
+                    sources.append(i)
+                    targets.append(len(workflow['steps']))
+                    values.append(1)
+                    link_colors.append("rgba(220, 53, 69, 0.3)")
+            elif next_step:
+                if next_step != 'end':
+                    sources.append(i)
+                    targets.append(next_step - 1)
+                    values.append(2)
+                    link_colors.append("rgba(108, 117, 125, 0.3)")
+                else:
+                    sources.append(i)
+                    targets.append(len(workflow['steps']))
+                    values.append(2)
+                    link_colors.append("rgba(108, 117, 125, 0.3)")
+
+        # Create Sankey diagram
+        fig = go.Figure(data=[go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="white", width=2),
+                label=node_labels,
+                color=node_colors
+            ),
+            link=dict(
+                source=sources,
+                target=targets,
+                value=values,
+                color=link_colors
+            )
+        )])
+
+        fig.update_layout(
+            title=f"{workflow['name']} - Visual Flow",
+            font=dict(size=12),
+            height=600,
+            margin=dict(l=20, r=20, t=60, b=20)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Error creating diagram: {str(e)}")
+        st.info("Falling back to text representation...")
+
+        # Fallback to text representation
+        for step_data in workflow['steps']:
+            role_icon = {
+                "employee": "👤",
+                "manager": "👔",
+                "hr_admin": "🔑",
+                "system": "⚙️"
+            }.get(step_data['role'], "📌")
+
+            col1, col2, col3 = st.columns([1, 4, 2])
+
+            with col1:
+                st.markdown(f"**Step {step_data['step']}**")
+                st.markdown(f"{role_icon}")
+
+            with col2:
+                st.markdown(f"**{step_data['name']}**")
+                st.markdown(f"Role: {step_data['role'].replace('_', ' ').title()}")
+                st.markdown(f"Function: {step_data['function']}")
+
+            with col3:
+                st.markdown(f"**Status:** {step_data['status']}")
+                st.markdown(f"**Actions:**")
+                for action in step_data['actions']:
+                    st.markdown(f"- {action}")
+
+            # Show connection arrow
+            if step_data.get('next_step') != 'end':
+                st.markdown("↓")
+            else:
+                st.markdown("✅ **END**")
+
+            st.markdown("---")
+
+    # Step details below diagram
+    st.markdown("---")
+    st.markdown("### 📋 Step Details")
+
     for step_data in workflow['steps']:
-        role_icon = {
-            "employee": "👤",
-            "manager": "👔",
-            "hr_admin": "🔑",
-            "system": "⚙️"
-        }.get(step_data['role'], "📌")
+        with st.expander(f"Step {step_data['step']}: {step_data['name']}"):
+            col1, col2 = st.columns(2)
 
-        col1, col2, col3 = st.columns([1, 4, 2])
+            with col1:
+                st.markdown(f"**Role:** {step_data['role'].replace('_', ' ').title()}")
+                st.markdown(f"**Function:** {step_data['function']}")
+                st.markdown(f"**Module:** `{step_data['module']}`")
 
-        with col1:
-            st.markdown(f"**Step {step_data['step']}**")
-            st.markdown(f"{role_icon}")
-
-        with col2:
-            st.markdown(f"**{step_data['name']}**")
-            st.markdown(f"Role: {step_data['role'].replace('_', ' ').title()}")
-            st.markdown(f"Function: {step_data['function']}")
-
-        with col3:
-            st.markdown(f"**Status:** {step_data['status']}")
-            st.markdown(f"**Actions:**")
-            for action in step_data['actions']:
-                st.markdown(f"- {action}")
-
-        # Show connection arrow
-        if step_data.get('next_step') != 'end':
-            st.markdown("↓")
-        else:
-            st.markdown("✅ **END**")
-
-        st.markdown("---")
+            with col2:
+                st.markdown(f"**Status:** {step_data['status']}")
+                st.markdown(f"**Available Actions:**")
+                for action in step_data['actions']:
+                    st.markdown(f"- {action}")
 
     if st.button("Close Diagram", use_container_width=True):
         st.session_state.show_flow_diagram = False
