@@ -45,19 +45,23 @@ def manage_skills():
             st.session_state.show_add_skill = True
 
     # Display existing skills
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT s.id, s.skill_name, s.category, s.description, s.created_at,
-                   COUNT(DISTINCT ts.team_id) as team_count,
-                   COUNT(DISTINCT es.emp_id) as employee_count
-            FROM skills s
-            LEFT JOIN team_skills ts ON s.id = ts.skill_id
-            LEFT JOIN employee_skills es ON s.id = es.skill_id
-            GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at
-            ORDER BY s.category, s.skill_name
-        """)
-        skills = cursor.fetchall()
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT s.id, s.skill_name, s.category, s.description, s.created_at,
+                       COUNT(DISTINCT ts.team_id) as team_count,
+                       COUNT(DISTINCT es.emp_id) as employee_count
+                FROM skills s
+                LEFT JOIN team_skills ts ON s.id = ts.skill_id
+                LEFT JOIN employee_skills es ON s.id = es.skill_id
+                GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at
+                ORDER BY s.category, s.skill_name
+            """)
+            skills = cursor.fetchall()
+    except Exception as e:
+        st.error(f"Error loading skills: {str(e)}")
+        skills = []
 
     if skills:
         st.markdown("---")
