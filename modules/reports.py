@@ -272,14 +272,14 @@ def show_compensation_report():
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT COUNT(*) as cnt, SUM(CAST(substr(bonus_amount, 2) as REAL)) as total
-            FROM bonus_calculations
+            SELECT COUNT(*) as cnt, SUM(amount) as total
+            FROM bonuses
             WHERE status = 'Approved'
         """)
         bonus_stats = dict(cursor.fetchone())
 
         cursor.execute("""
-            SELECT COUNT(*) as cnt FROM bonus_calculations WHERE status = 'Pending'
+            SELECT COUNT(*) as cnt FROM bonuses WHERE status = 'Pending'
         """)
         pending_bonus = cursor.fetchone()['cnt']
 
