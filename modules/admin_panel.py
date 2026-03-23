@@ -187,12 +187,12 @@ def show_system_statistics():
         """)
         today_activity = cursor.fetchone()['cnt']
 
-        # Module usage
+        # Module usage (using entity_type as module indicator)
         cursor.execute("""
-            SELECT module, COUNT(*) as count
+            SELECT entity_type as module, COUNT(*) as count
             FROM audit_logs
             WHERE timestamp >= NOW() - INTERVAL '30 days'
-            GROUP BY module
+            GROUP BY entity_type
             ORDER BY count DESC
             LIMIT 10
         """)
@@ -322,7 +322,7 @@ def show_audit_logs():
         params = [date_from.isoformat(), date_to.isoformat()]
 
         if module_filter != "All":
-            query += " AND al.module = %s"
+            query += " AND al.entity_type = %s"
             params.append(module_filter)
 
         query += " ORDER BY al.timestamp DESC LIMIT 100"
@@ -339,7 +339,7 @@ def show_audit_logs():
             log_data.append({
                 'Time': str(log['timestamp'])[:16] if log.get('timestamp') else 'N/A',
                 'User': f"{log.get('first_name', 'System')} {log.get('last_name', '')}",
-                'Module': log['module'],
+                'Module': log.get('entity_type', 'N/A'),
                 'Action': log['action']
             })
 

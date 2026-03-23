@@ -165,7 +165,7 @@ def show_workforce_analytics():
                 department,
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'Active' THEN 1 END) as active,
-                AVG(CAST(substr(salary, 2) as REAL)) as avg_salary
+                AVG(base_salary) as avg_salary
             FROM employees
             WHERE department IS NOT NULL
             GROUP BY department
@@ -217,11 +217,11 @@ def show_compensation_report():
         # Salary statistics
         cursor.execute("""
             SELECT
-                AVG(CAST(substr(salary, 2) as REAL)) as avg_salary,
-                MIN(CAST(substr(salary, 2) as REAL)) as min_salary,
-                MAX(CAST(substr(salary, 2) as REAL)) as max_salary
+                AVG(base_salary) as avg_salary,
+                MIN(base_salary) as min_salary,
+                MAX(base_salary) as max_salary
             FROM employees
-            WHERE status = 'Active' AND salary IS NOT NULL
+            WHERE status = 'Active' AND base_salary IS NOT NULL
         """)
         salary_stats = dict(cursor.fetchone())
 
@@ -245,11 +245,11 @@ def show_compensation_report():
             SELECT
                 department,
                 COUNT(*) as employees,
-                AVG(CAST(substr(salary, 2) as REAL)) as avg_salary,
-                MIN(CAST(substr(salary, 2) as REAL)) as min_salary,
-                MAX(CAST(substr(salary, 2) as REAL)) as max_salary
+                AVG(base_salary) as avg_salary,
+                MIN(base_salary) as min_salary,
+                MAX(base_salary) as max_salary
             FROM employees
-            WHERE status = 'Active' AND salary IS NOT NULL AND department IS NOT NULL
+            WHERE status = 'Active' AND base_salary IS NOT NULL AND department IS NOT NULL
             GROUP BY department
             ORDER BY avg_salary DESC
         """)
