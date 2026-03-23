@@ -83,15 +83,14 @@ def show_all_certificates():
         with col1:
             dept_filter = st.selectbox("Department", ["All"] + sorted(list(set([c.get('department', 'Unknown') for c in certificates if c.get('department')]))))
         with col2:
-            status_filter = st.selectbox("Status", ["All", "Active", "Expiring Soon", "Renewal Pending"])
+            status_filter = st.selectbox("Status", ["All", "Active", "Expiring Soon", "Renewal Pending", "Expired"])
 
         # Apply filters
         filtered = certificates
-        # Removed type_filter since certificate_type column doesn't exist
         if dept_filter != "All":
             filtered = [c for c in filtered if c.get('department') == dept_filter]
         if status_filter != "All":
-            filtered = [c for c in filtered if c['status'] == status_filter]
+            filtered = [c for c in filtered if c.get('status') == status_filter]
 
         st.markdown(f"**Total Certificates:** {len(filtered)}")
 
@@ -249,9 +248,10 @@ def show_expiring_certificates():
             st.markdown("#### 🔴 CRITICAL - Expiring within 30 days")
             for cert in critical:
                 with st.expander(f"⚠️ {cert.get('name', 'My Certificate')} - {cert['certificate_name']} - {cert['days_remaining']} days"):
+                    issuing = cert.get('issuing_org') or cert.get('issuing_organization') or 'N/A'
                     st.markdown(f"""
                     **Certificate:** {cert['certificate_name']}
-                    **Type:** {cert['certificate_type']}
+                    **Issuing Organization:** {issuing}
                     **Expiry Date:** {cert['expiry_date']}
                     **Days Remaining:** {cert['days_remaining']}
                     """)
@@ -266,7 +266,8 @@ def show_expiring_certificates():
             st.markdown("#### 🟡 WARNING - Expiring in 31-60 days")
             for cert in warning:
                 name = cert.get('name', 'My Certificate')
-                st.markdown(f"- **{name}** - {cert['certificate_name']} ({cert['certificate_type']}) - {cert['days_remaining']} days")
+                issuing = cert.get('issuing_org') or cert.get('issuing_organization') or 'N/A'
+                st.markdown(f"- **{name}** - {cert['certificate_name']} (Issued by: {issuing}) - {cert['days_remaining']} days")
 
         # Attention certificates
         if attention:
@@ -303,14 +304,13 @@ def show_my_certificates():
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
+                    issuing = cert.get('issuing_org') or cert.get('issuing_organization') or 'N/A'
                     st.markdown(f"""
                     **Certificate:** {cert['certificate_name']}
-                    **Type:** {cert['certificate_type']}
-                    **Certificate #:** {cert['certificate_number'] or 'N/A'}
-                    **Issuing Authority:** {cert['issuing_authority']}
-                    **Issue Date:** {cert['issue_date']}
-                    **Expiry Date:** {cert['expiry_date']}
-                    **Status:** {cert['status']}
+                    **Issuing Organization:** {issuing}
+                    **Issue Date:** {cert.get('issue_date', 'N/A')}
+                    **Expiry Date:** {cert.get('expiry_date', 'N/A')}
+                    **Status:** {cert.get('status', 'N/A')}
                     """)
 
                 with col2:
@@ -319,8 +319,8 @@ def show_my_certificates():
                     else:
                         st.metric("Status", "EXPIRED")
 
-                if cert.get('certificate_file_path'):
-                    st.markdown(f"📎 File: {cert['certificate_file_path']}")
+                if cert.get('certificate_file'):
+                    st.markdown(f"📎 File: {cert['certificate_file']}")
 
                 if days_remaining <= 60:
                     st.warning(f"⚠️ This certificate expires in {days_remaining} days. Please plan for renewal.")
@@ -345,20 +345,9 @@ def add_certificate():
 
         with col1:
             certificate_name = st.text_input("Certificate Name *", placeholder="e.g., PMP, AWS Certified, CPA")
-            certificate_type = st.selectbox("Type *", [
-                "Professional Certification",
-                "License",
-                "Safety Certification",
-                "Technical Certification",
-                "Language Certification",
-                "Industry Specific",
-                "Academic Credential",
-                "Other"
-            ])
-            issuing_authority = st.text_input("Issuing Authority *", placeholder="e.g., PMI, AWS, State Board")
+            issuing_organization = st.text_input("Issuing Organization *", placeholder="e.g., PMI, AWS, State Board")
 
         with col2:
-            certificate_number = st.text_input("Certificate Number", placeholder="Unique ID or license #")
             issue_date = st.date_input("Issue Date *", value=date.today())
 
             # Default expiry: 2 years from issue
@@ -378,13 +367,11 @@ def add_certificate():
 
                     cursor.execute("""
                         INSERT INTO certificates (
-                            emp_id, certificate_name, certificate_type, certificate_number,
-                            issuing_authority, issue_date, expiry_date, notes,
-                            status, created_by
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active', %s)
-                    """, (emp_id, certificate_name, certificate_type, certificate_number,
-                         issuing_authority, issue_date.isoformat(), expiry_date.isoformat(),
-                         notes, get_current_user()['employee_id']))
+                            emp_id, certificate_name, issuing_organization,
+                            issue_date, expiry_date, status
+                        ) VALUES (%s, %s, %s, %s, %s, 'Active')
+                    """, (emp_id, certificate_name, issuing_organization,
+                         issue_date.isoformat(), expiry_date.isoformat()))
 
                     cert_id = cursor.lastrowid
 
@@ -415,20 +402,10 @@ def upload_certificate():
 
         with col1:
             certificate_name = st.text_input("Certificate Name *", placeholder="e.g., Project Management Professional")
-            certificate_type = st.selectbox("Type *", [
-                "Professional Certification",
-                "License",
-                "Safety Certification",
-                "Technical Certification",
-                "Language Certification",
-                "Industry Specific",
-                "Academic Credential",
-                "Other"
-            ])
+            issuing_organization = st.text_input("Issuing Organization *", placeholder="e.g., PMI, AWS")
 
         with col2:
-            certificate_number = st.text_input("Certificate/License Number", placeholder="Unique ID")
-            issuing_authority = st.text_input("Issuing Organization *", placeholder="e.g., PMI, AWS")
+            pass  # Empty column for layout
 
         col1, col2 = st.columns(2)
         with col1:
@@ -454,13 +431,11 @@ def upload_certificate():
 
                     cursor.execute("""
                         INSERT INTO certificates (
-                            emp_id, certificate_name, certificate_type, certificate_number,
-                            issuing_authority, issue_date, expiry_date, notes,
-                            certificate_file_path, status, created_by
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending Verification', %s)
-                    """, (user['employee_id'], certificate_name, certificate_type, certificate_number,
-                         issuing_authority, issue_date.isoformat(), expiry_date.isoformat(),
-                         notes, file_path, user['employee_id']))
+                            emp_id, certificate_name, issuing_organization,
+                            issue_date, expiry_date, certificate_file, status
+                        ) VALUES (%s, %s, %s, %s, %s, %s, 'Pending Verification')
+                    """, (user['employee_id'], certificate_name, issuing_organization,
+                         issue_date.isoformat(), expiry_date.isoformat(), file_path))
 
                     cert_id = cursor.lastrowid
 
@@ -596,29 +571,30 @@ def show_certificate_analytics():
 
         st.markdown("---")
 
-        # By certificate type
-        st.markdown("#### By Certificate Type")
+        # By issuing organization
+        st.markdown("#### By Issuing Organization")
         cursor.execute("""
             SELECT
-                certificate_type,
+                COALESCE(issuing_organization, issuing_org, 'Unknown') as org_name,
                 COUNT(*) as count,
                 SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN (expiry_date - CURRENT_DATE) <= 60 THEN 1 ELSE 0 END) as expiring_soon
+                SUM(CASE WHEN (expiry_date - CURRENT_DATE) <= 60 AND status = 'Active' THEN 1 ELSE 0 END) as expiring_soon
             FROM certificates
-            GROUP BY certificate_type
+            GROUP BY COALESCE(issuing_organization, issuing_org, 'Unknown')
             ORDER BY count DESC
+            LIMIT 10
         """)
-        by_type = [dict(row) for row in cursor.fetchall()]
+        by_org = [dict(row) for row in cursor.fetchall()]
 
-        for ctype in by_type:
+        for org in by_org:
             col1, col2, col3 = st.columns([2, 1, 1])
             with col1:
-                st.markdown(f"**{ctype['certificate_type']}**")
+                st.markdown(f"**{org['org_name']}**")
             with col2:
-                st.markdown(f"Total: {ctype['count']} ({ctype['active']} active)")
+                st.markdown(f"Total: {org['count']} ({org['active']} active)")
             with col3:
-                if ctype['expiring_soon'] > 0:
-                    st.markdown(f"⚠️ {ctype['expiring_soon']} expiring soon")
+                if org['expiring_soon'] > 0:
+                    st.markdown(f"⚠️ {org['expiring_soon']} expiring soon")
 
         st.markdown("---")
 
@@ -663,7 +639,8 @@ def show_team_certificates():
     if certificates:
         for cert in certificates:
             status_emoji = "🟢" if cert['days_remaining'] > 90 else "🟡" if cert['days_remaining'] > 30 else "🔴"
-            st.markdown(f"{status_emoji} **{cert['name']}** - {cert['certificate_name']} ({cert['certificate_type']}) - Expires: {cert['expiry_date']} ({cert['days_remaining']} days)")
+            issuing = cert.get('issuing_org') or cert.get('issuing_organization') or 'N/A'
+            st.markdown(f"{status_emoji} **{cert['name']}** - {cert['certificate_name']} (Issued by: {issuing}) - Expires: {cert['expiry_date']} ({cert['days_remaining']} days)")
     else:
         st.info("No team certificates found")
 

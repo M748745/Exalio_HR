@@ -155,35 +155,20 @@ def show_compliance_requirements():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Try compliance_requirements first, fallback to compliance table
-        try:
-            query = "SELECT * FROM compliance_requirements WHERE 1=1"
-            params = []
+        query = "SELECT * FROM compliance_requirements WHERE 1=1"
+        params = []
 
-            if category_filter != "All":
-                query += " AND requirement_type = %s"
-                params.append(category_filter)
+        if category_filter != "All":
+            query += " AND requirement_type = %s"
+            params.append(category_filter)
 
-            if status_filter != "All":
-                query += " AND status = %s"
-                params.append(status_filter)
+        if status_filter != "All":
+            query += " AND status = %s"
+            params.append(status_filter)
 
-            query += " ORDER BY next_review_date ASC"
-            cursor.execute(query, params)
-            requirements = [dict(row) for row in cursor.fetchall()]
-        except Exception:
-            # Fallback to compliance table if compliance_requirements doesn't exist
-            conn.rollback()
-            query = "SELECT * FROM compliance WHERE 1=1"
-            params = []
-
-            if status_filter != "All":
-                query += " AND status = %s"
-                params.append(status_filter)
-
-            query += " ORDER BY due_date ASC"
-            cursor.execute(query, params)
-            requirements = [dict(row) for row in cursor.fetchall()]
+        query += " ORDER BY due_date ASC"
+        cursor.execute(query, params)
+        requirements = [dict(row) for row in cursor.fetchall()]
 
     if requirements:
         for req in requirements:
@@ -197,8 +182,8 @@ def show_compliance_requirements():
             color = status_colors.get(req['status'], 'rgba(125, 150, 190, 0.1)')
 
             # Check if overdue
-            if req['next_review_date']:
-                review_date = datetime.strptime(req['next_review_date'], '%Y-%m-%d').date()
+            if req.get('due_date'):
+                review_date = datetime.strptime(str(req['due_date']), '%Y-%m-%d').date()
                 is_overdue = review_date < date.today() and req['status'] != 'Compliant'
                 days_until = (review_date - date.today()).days
             else:
@@ -207,12 +192,12 @@ def show_compliance_requirements():
 
             with st.expander(f"{'⚠️' if is_overdue else '📜'} {req['requirement_name']} - {req['status']}"):
                 st.markdown(f"""
-                **Category:** {req['category']}
+                **Category:** {req.get('requirement_type', 'N/A')}
                 **Status:** {req['status']}
-                **Review Frequency:** {req['review_frequency']}
-                **Next Review:** {req['next_review_date']} {f"({'Overdue by ' + str(abs(days_until)) + ' days'})" if is_overdue else f"(In {days_until} days)" if days_until and days_until >= 0 else ''}
-                **Responsible:** {req['responsible_person']}
-                **Last Updated:** {req.get('updated_at', 'Never')[:10]}
+                **Frequency:** {req.get('frequency', 'N/A')}
+                **Due Date:** {req.get('due_date', 'N/A')} {f"({'Overdue by ' + str(abs(days_until)) + ' days'})" if is_overdue else f"(In {days_until} days)" if days_until and days_until >= 0 else ''}
+                **Description:** {req.get('description', 'N/A')}
+                **Created:** {req.get('created_at', 'N/A')[:10] if req.get('created_at') else 'N/A'}
                 """)
 
                 if req['description']:
@@ -367,10 +352,10 @@ def generate_compliance_summary():
 
         # Category breakdown
         cursor.execute("""
-            SELECT category, COUNT(*) as count,
+            SELECT requirement_type as category, COUNT(*) as count,
                    SUM(CASE WHEN status = 'Compliant' THEN 1 ELSE 0 END) as compliant
             FROM compliance_requirements
-            GROUP BY category
+            GROUP BY requirement_type
         """)
         category_data = [dict(row) for row in cursor.fetchall()]
 
@@ -412,11 +397,11 @@ def generate_requirements_by_category():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT category, COUNT(*) as total,
+            SELECT requirement_type as category, COUNT(*) as total,
                    SUM(CASE WHEN status = 'Compliant' THEN 1 ELSE 0 END) as compliant,
-                   SUM(CASE WHEN status = 'Overdue' OR next_review_date < CURRENT_DATE THEN 1 ELSE 0 END) as overdue
+                   SUM(CASE WHEN status = 'Overdue' OR due_date < CURRENT_DATE THEN 1 ELSE 0 END) as overdue
             FROM compliance_requirements
-            GROUP BY category
+            GROUP BY requirement_type
             ORDER BY total DESC
         """)
         data = [dict(row) for row in cursor.fetchall()]
@@ -433,12 +418,12 @@ def generate_overdue_items():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT requirement_name, category, next_review_date,
-                   EXTRACT(DAY FROM (CURRENT_DATE - next_review_date)) as days_overdue
+            SELECT requirement_name, requirement_type as category, due_date,
+                   EXTRACT(DAY FROM (CURRENT_DATE - due_date)) as days_overdue
             FROM compliance_requirements
-            WHERE next_review_date < CURRENT_DATE
+            WHERE due_date < CURRENT_DATE
             AND status != 'Compliant'
-            ORDER BY next_review_date ASC
+            ORDER BY due_date ASC
         """)
         overdue = [dict(row) for row in cursor.fetchall()]
 
@@ -543,12 +528,11 @@ def add_compliance_requirement(name, category, description, frequency, next_revi
 
             cursor.execute("""
                 INSERT INTO compliance_requirements (
-                    requirement_name, category, description,
-                    review_frequency, next_review_date,
-                    responsible_person, status
-                ) VALUES (%s, %s, %s, %s, %s, %s, 'Not Started')
+                    requirement_name, requirement_type, description,
+                    frequency, due_date, applicable_to, status, created_by
+                ) VALUES (%s, %s, %s, %s, %s, %s, 'Not Started', %s)
             """, (name, category, description, frequency,
-                 next_review.isoformat(), responsible))
+                 next_review.isoformat(), responsible, get_current_user()['employee_id']))
 
             req_id = cursor.lastrowid
 
@@ -565,9 +549,9 @@ def update_requirement_status(req_id, status):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                UPDATE compliance_requirements SET status = %s, updated_at = %s
+                UPDATE compliance_requirements SET status = %s
                 WHERE id = %s
-            """, (status, datetime.now().isoformat(), req_id))
+            """, (status, req_id))
             conn.commit()
             log_audit(f"Updated requirement {req_id} to {status}", "compliance", req_id)
             st.success(f"✅ Status updated to {status}!")

@@ -326,7 +326,8 @@ def approve_leave_request(request_id, emp_id, leave_type, days):
                 cursor.execute("""
                     UPDATE leave_balance SET
                         used_days = used_days + %s,
-                        remaining_days = remaining_days - %s                     WHERE emp_id = %s AND leave_type = %s AND year = %s
+                        remaining_days = remaining_days - %s
+                    WHERE emp_id = %s AND leave_type = %s AND year = %s
                 """, (days, days, emp_id, leave_type, datetime.now().year))
 
                 # Notify employee

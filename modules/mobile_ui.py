@@ -110,18 +110,19 @@ def show_mobile_dashboard():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT action, created_at FROM audit_logs
+            SELECT action, timestamp FROM audit_logs
             WHERE user_id = %s
-            ORDER BY created_at DESC
+            ORDER BY timestamp DESC
             LIMIT 5
         """, (user['employee_id'],))
         activities = [dict(row) for row in cursor.fetchall()]
 
     if activities:
         for activity in activities:
+            timestamp_str = str(activity.get('timestamp', ''))[:10] if activity.get('timestamp') else 'N/A'
             st.markdown(f"""
                 <div style="background: rgba(125, 150, 190, 0.08); padding: 12px; border-radius: 6px; margin-bottom: 8px;">
-                    <small>{activity['created_at'][:10]}</small><br>
+                    <small>{timestamp_str}</small><br>
                     {activity['action']}
                 </div>
             """, unsafe_allow_html=True)

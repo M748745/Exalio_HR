@@ -281,7 +281,7 @@ def show_employee_details(emp):
         **Employee ID:** {emp['employee_id']}
         **Department:** {emp['department']}
         **Email:** {emp['email']}
-        **Phone:** {emp.get('phone_number', 'N/A')}
+        **Phone:** {emp.get('phone', 'N/A')}
         **Date of Birth:** {emp.get('date_of_birth', 'N/A')}
         **Hire Date:** {emp.get('hire_date', 'N/A')}
         """)
@@ -306,7 +306,7 @@ def show_employee_details(emp):
 
     with col2:
         if st.button("📞 Call", use_container_width=True):
-            st.info(f"Would initiate call to: {emp.get('phone_number', 'N/A')}")
+            st.info(f"Would initiate call to: {emp.get('phone', 'N/A')}")
 
     with col3:
         if st.button("👥 View Team", use_container_width=True):

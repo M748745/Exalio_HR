@@ -58,7 +58,7 @@ def show_my_assets():
         cursor.execute("""
             SELECT * FROM assets
             WHERE assigned_to = %s AND status = 'Assigned'
-            ORDER BY assigned_date DESC
+            ORDER BY created_at DESC
         """, (user['employee_id'],))
         assets = [dict(row) for row in cursor.fetchall()]
 
@@ -90,7 +90,7 @@ def show_my_assets():
                     <small style="color: #7d96be;">
                         Type: {asset['asset_type']} •
                         Serial: {asset['serial_number'] or 'N/A'}<br>
-                        Assigned: {asset['assigned_date'][:10] if asset['assigned_date'] else 'N/A'} •
+                        Created: {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'} •
                         Condition: {asset['condition']}
                     </small>
                 </div>
@@ -116,8 +116,8 @@ def show_asset_history():
         cursor = conn.cursor()
         cursor.execute("""
             SELECT * FROM assets
-            WHERE assigned_to = %s
-            ORDER BY assigned_date DESC
+            WHERE assigned_to = %s OR assigned_to IS NULL
+            ORDER BY created_at DESC
         """, (user['employee_id'],))
         history = [dict(row) for row in cursor.fetchall()]
 
@@ -135,8 +135,7 @@ def show_asset_history():
                     <strong>{asset['asset_name']}</strong> ({asset['asset_type']})<br>
                     <small style="color: #7d96be;">
                         {status_badge} •
-                        Assigned: {asset['assigned_date'][:10] if asset['assigned_date'] else 'N/A'}
-                        {f" • Returned: {asset['return_date'][:10]}" if asset['return_date'] else ""}
+                        Created: {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'}
                     </small>
                 </div>
             """, unsafe_allow_html=True)
@@ -152,11 +151,11 @@ def show_team_assets():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.id as employee_id
+            SELECT a.*, e.first_name, e.last_name, e.employee_id
             FROM assets a
             LEFT JOIN employees e ON a.assigned_to = e.id
             WHERE e.manager_id = %s AND a.status = 'Assigned'
-            ORDER BY a.assigned_date DESC
+            ORDER BY a.created_at DESC
         """, (user['employee_id'],))
         assets = [dict(row) for row in cursor.fetchall()]
 
@@ -220,29 +219,22 @@ def show_all_assets():
                     st.markdown(f"""
                     **Asset:** {asset.get('asset_name', 'N/A')}
                     **Type:** {asset.get('asset_type', 'N/A')}
-                    **Asset Tag:** {asset.get('asset_tag', 'N/A')}
+                    **Serial Number:** {asset.get('serial_number', 'N/A')}
                     **Purchase Date:** {asset.get('purchase_date', 'N/A')}
-                    **Value:** ${asset.get('value', 0):,.2f} if asset.get('value') else 'N/A'
+                    **Purchase Cost:** ${asset.get('purchase_cost', 0):,.2f}
                     **Condition:** {asset.get('condition', 'N/A')}
                     **Status:** {asset.get('status', 'N/A')}
-                    **Warranty Until:** {asset.get('warranty_expiry', 'N/A')}
+                    **Created:** {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'}
                     """)
 
                     if asset.get('assigned_to'):
-                        assigned_date_str = asset.get('assigned_date', '')
-                        if assigned_date_str and isinstance(assigned_date_str, str):
-                            assigned_date = assigned_date_str[:10]
-                        else:
-                            assigned_date = assigned_date_str.strftime('%Y-%m-%d') if assigned_date_str else 'N/A'
-
                         st.markdown(f"""
                         **Assigned To:** {asset.get('first_name', 'N/A')} {asset.get('last_name', '')} ({asset.get('employee_id', 'N/A')})
-                        **Assigned Date:** {assigned_date}
                         """)
 
                 with col2:
-                    if asset.get('value'):
-                        st.metric("Value", f"${asset.get('value', 0):,.2f}")
+                    if asset.get('purchase_cost'):
+                        st.metric("Value", f"${asset.get('purchase_cost', 0):,.2f}")
 
                 if asset.get('notes'):
                     st.info(f"📝 Notes: {asset.get('notes')}")
@@ -328,39 +320,24 @@ def show_asset_assignments():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        try:
-            # Try with employee_id, use id as fallback
-            cursor.execute("""
-                SELECT a.*, e.first_name, e.last_name, e.id as employee_id, e.department
-                FROM assets a
-                LEFT JOIN employees e ON a.assigned_to = e.id
-                WHERE a.status IN ('Assigned', 'Returned')
-                ORDER BY a.assigned_date DESC
-                LIMIT 50
-            """)
-            assignments = [dict(row) for row in cursor.fetchall()]
-        except Exception:
-            # Rollback failed transaction and retry
-            conn.rollback()
-            cursor.execute("""
-                SELECT a.*, e.first_name, e.last_name, e.department, e.employee_id
-                FROM assets a
-                LEFT JOIN employees e ON a.assigned_to = e.id
-                WHERE a.status IN ('Assigned', 'Returned')
-                ORDER BY a.created_at DESC
-                LIMIT 50
-            """)
-            assignments = [dict(row) for row in cursor.fetchall()]
+        cursor.execute("""
+            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
+            FROM assets a
+            LEFT JOIN employees e ON a.assigned_to = e.id
+            WHERE a.status IN ('Assigned', 'Available')
+            ORDER BY a.created_at DESC
+            LIMIT 50
+        """)
+        assignments = [dict(row) for row in cursor.fetchall()]
 
     if assignments:
         for assignment in assignments:
             status_icon = '🟢' if assignment.get('status') == 'Assigned' else '⚪'
-            assigned_date_str = str(assignment.get('assigned_date', ''))[:10] if assignment.get('assigned_date') else 'N/A'
-            return_date_str = f" • Returned: {str(assignment.get('return_date', ''))[:10]}" if assignment.get('return_date') else ""
-            first_name = assignment.get('first_name', 'Unknown')
-            last_name = assignment.get('last_name', '')
-            employee_id = assignment.get('employee_id', 'N/A')
-            department = assignment.get('department', 'N/A')
+            created_date_str = str(assignment.get('created_at', ''))[:10] if assignment.get('created_at') else 'N/A'
+            first_name = assignment.get('first_name', 'Unknown') if assignment.get('assigned_to') else 'Unassigned'
+            last_name = assignment.get('last_name', '') if assignment.get('assigned_to') else ''
+            employee_id = assignment.get('employee_id', 'N/A') if assignment.get('assigned_to') else 'N/A'
+            department = assignment.get('department', 'N/A') if assignment.get('assigned_to') else 'N/A'
             asset_name = assignment.get('asset_name', 'Unknown Asset')
 
             st.markdown(f"""
@@ -369,8 +346,7 @@ def show_asset_assignments():
                     {first_name} {last_name} ({employee_id})<br>
                     <small style="color: #7d96be;">
                         Department: {department} •
-                        Assigned: {assigned_date_str}
-                        {return_date_str}
+                        Created: {created_date_str}
                     </small>
                 </div>
             """, unsafe_allow_html=True)
@@ -430,14 +406,11 @@ def create_asset(asset_name, asset_type, serial_number, purchase_date, purchase_
             cursor.execute("""
                 INSERT INTO assets (
                     asset_name, asset_type, serial_number, purchase_date,
-                    purchase_cost, currency, condition, warranty_expiry,
-                    notes, status
-                ) VALUES (%s, %s, %s, %s, %s, 'USD', %s, %s, %s, 'Available')
+                    purchase_cost, condition, notes, status
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'Available')
             """, (asset_name, asset_type, serial_number,
                  purchase_date.isoformat() if purchase_date else None,
-                 purchase_cost, condition,
-                 warranty_expiry.isoformat() if warranty_expiry else None,
-                 notes))
+                 purchase_cost, condition, notes))
 
             asset_id = cursor.lastrowid
 
@@ -458,10 +431,9 @@ def assign_asset(asset_id, emp_id):
             cursor.execute("""
                 UPDATE assets SET
                     assigned_to = %s,
-                    assigned_date = %s,
                     status = 'Assigned'
                 WHERE id = %s
-            """, (emp_id, datetime.now().isoformat(), asset_id))
+            """, (emp_id, asset_id))
 
             # Get asset and employee info
             cursor.execute("SELECT asset_name FROM assets WHERE id = %s", (asset_id,))
@@ -490,10 +462,9 @@ def return_asset(asset_id):
             cursor.execute("""
                 UPDATE assets SET
                     status = 'Available',
-                    return_date = %s,
                     assigned_to = NULL
                 WHERE id = %s
-            """, (datetime.now().isoformat(), asset_id))
+            """, (asset_id,))
 
             conn.commit()
             log_audit(f"Returned asset {asset_id}", "assets", asset_id)

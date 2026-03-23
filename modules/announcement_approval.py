@@ -65,7 +65,6 @@ def show_all_announcements():
                     st.markdown(f"**Content:** {ann['content']}")
                     st.write(f"**Created by:** {ann['first_name']} {ann['last_name']}")
                 with col2:
-                    st.write(f"**Type:** {ann['announcement_type']}")
                     st.write(f"**Target:** {ann['target_audience']}")
                     st.write(f"**Priority:** {ann['priority']}")
                     st.write(f"**Status:** {ann['status']}")
@@ -79,11 +78,9 @@ def show_all_announcements():
                                 cursor.execute("""
                                     UPDATE announcements SET
                                         status = 'Published',
-                                        approved_by = %s,
-                                        approval_date = %s,
                                         published_date = %s
                                     WHERE id = %s
-                                """, (get_current_user()['employee_id'], datetime.now(), datetime.now(), ann['id']))
+                                """, (datetime.now(), ann['id']))
                                 conn.commit()
 
                             # Notify all employees based on target audience
@@ -122,7 +119,6 @@ def create_announcement():
 
         col1, col2 = st.columns(2)
         with col1:
-            announcement_type = st.selectbox("Type *", ["General", "HR Policy", "Event", "Holiday", "Emergency", "System", "Other"])
             priority = st.selectbox("Priority *", ["High", "Medium", "Low"])
         with col2:
             target_audience = st.selectbox("Target Audience *", ["All", "Engineering", "Sales", "Marketing", "HR", "Finance", "Operations"])
