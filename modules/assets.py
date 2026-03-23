@@ -318,17 +318,22 @@ def show_asset_assignments():
     """Show asset assignment history"""
     st.markdown("### 👥 Asset Assignments")
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
-            FROM assets a
-            LEFT JOIN employees e ON a.assigned_to = e.id
-            WHERE a.status IN ('Assigned', 'Available')
-            ORDER BY a.created_at DESC
-            LIMIT 50
-        """)
-        assignments = [dict(row) for row in cursor.fetchall()]
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT a.*, e.first_name, e.last_name, e.employee_id, e.department
+                FROM assets a
+                LEFT JOIN employees e ON a.assigned_to = e.id
+                WHERE a.status IN ('Assigned', 'Available')
+                ORDER BY a.created_at DESC
+                LIMIT 50
+            """)
+            assignments = [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        st.error(f"❌ Database error in asset assignments: {str(e)}")
+        st.write(f"Error type: {type(e).__name__}")
+        assignments = []
 
     if assignments:
         for assignment in assignments:
@@ -357,30 +362,36 @@ def show_asset_reports():
     """Show asset reports and statistics"""
     st.markdown("### 📊 Asset Reports")
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        # Total assets by status
-        cursor.execute("""
-            SELECT status, COUNT(*) as count
-            FROM assets
-            GROUP BY status
-            ORDER BY count DESC
-        """)
-        status_data = [dict(row) for row in cursor.fetchall()]
+            # Total assets by status
+            cursor.execute("""
+                SELECT status, COUNT(*) as count
+                FROM assets
+                GROUP BY status
+                ORDER BY count DESC
+            """)
+            status_data = [dict(row) for row in cursor.fetchall()]
 
-        # Total assets by type
-        cursor.execute("""
-            SELECT asset_type, COUNT(*) as count
-            FROM assets
-            GROUP BY asset_type
-            ORDER BY count DESC
-        """)
-        type_data = [dict(row) for row in cursor.fetchall()]
+            # Total assets by type
+            cursor.execute("""
+                SELECT asset_type, COUNT(*) as count
+                FROM assets
+                GROUP BY asset_type
+                ORDER BY count DESC
+            """)
+            type_data = [dict(row) for row in cursor.fetchall()]
 
-        # Total value
-        cursor.execute("SELECT SUM(purchase_cost) as total FROM assets")
-        total_value = cursor.fetchone()['total'] or 0
+            # Total value
+            cursor.execute("SELECT SUM(purchase_cost) as total FROM assets")
+            total_value = cursor.fetchone()['total'] or 0
+    except Exception as e:
+        st.error(f"Error loading asset reports: {str(e)}")
+        status_data = []
+        type_data = []
+        total_value = 0
 
     col1, col2 = st.columns(2)
 

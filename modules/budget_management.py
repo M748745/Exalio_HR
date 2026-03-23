@@ -63,10 +63,10 @@ def show_all_budgets():
                     COALESCE(SUM(e.amount), 0) as spent,
                     b.amount - COALESCE(SUM(e.amount), 0) as remaining
                 FROM budgets b
-                LEFT JOIN expenses e ON b.department = e.department
-                    AND e.status = 'Approved'
+                LEFT JOIN expenses e ON e.status = 'Approved'
                     AND EXTRACT(YEAR FROM e.expense_date) = b.fiscal_year
                     AND EXTRACT(MONTH FROM e.expense_date) = b.period_month
+                LEFT JOIN employees emp ON e.emp_id = emp.id AND emp.department = b.department
                 WHERE b.status = 'Active'
                 GROUP BY b.id, b.department, b.amount, b.fiscal_year, b.period_month, b.category,
                          b.notes, b.status

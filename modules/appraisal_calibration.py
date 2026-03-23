@@ -213,6 +213,7 @@ def show_rating_distribution():
                 FROM appraisals
                 WHERE status IN ('Manager Review', 'HR Review', 'Completed')
                   AND manager_rating IS NOT NULL
+                  AND manager_rating != ''
                 GROUP BY manager_rating
                 ORDER BY
                     CASE manager_rating
@@ -221,6 +222,7 @@ def show_rating_distribution():
                         WHEN 'Meets Expectations' THEN 3
                         WHEN 'Needs Improvement' THEN 4
                         WHEN 'Unsatisfactory' THEN 5
+                        ELSE 6
                     END
             """)
             distribution = [dict(row) for row in cursor.fetchall()]

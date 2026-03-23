@@ -144,8 +144,12 @@ def show_all_contracts():
                                  delta=f"{days_remaining} days left",
                                  delta_color="inverse" if days_remaining <= 30 else "normal")
                     elif days_remaining is not None:
+                        try:
+                            abs_days = abs(int(days_remaining))
+                        except (ValueError, TypeError):
+                            abs_days = 0
                         st.metric("Status", "EXPIRED",
-                                 delta=f"{abs(days_remaining)} days ago",
+                                 delta=f"{abs_days} days ago",
                                  delta_color="inverse")
 
                 # Action buttons

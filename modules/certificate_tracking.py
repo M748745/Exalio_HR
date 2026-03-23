@@ -116,9 +116,13 @@ def show_all_certificates():
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
-                    issuing_org = cert.get('issuing_organization') or cert.get('issuing_org') or 'N/A'
+                    try:
+                        issuing_org = str(cert.get('issuing_organization') or cert.get('issuing_org') or 'N/A')
+                    except Exception:
+                        issuing_org = 'N/A'
+
                     st.markdown(f"""
-                    **Employee:** {cert.get('name', 'N/A')} ({cert.get('employee_id', 'N/A')})
+                    **Employee:** {cert.get('name', 'N/A')}  ({cert.get('employee_id', 'N/A')})
                     **Department:** {cert.get('department', 'N/A')}
                     **Position:** {cert.get('position', 'N/A')}
                     **Certificate:** {cert.get('certificate_name', 'N/A')}
