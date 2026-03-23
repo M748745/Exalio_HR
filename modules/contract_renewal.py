@@ -297,15 +297,13 @@ def show_renewal_requests():
                     e.department,
                     c.contract_type,
                     c.end_date,
-                    c.new_end_date,
-                    c.renewal_terms,
-                    c.renewal_notes,
-                    c.renewal_requested_by,
-                    c.renewal_requested_date
+                    c.renewal_date,
+                    c.renewal_status,
+                    c.terms
                 FROM contracts c
                 JOIN employees e ON c.emp_id = e.id
                 WHERE c.renewal_status = 'Pending Approval'
-                ORDER BY c.renewal_requested_date ASC
+                ORDER BY c.updated_at DESC
             """)
         else:
             user = get_current_user()
@@ -317,14 +315,14 @@ def show_renewal_requests():
                     e.first_name || ' ' || e.last_name as name,
                     c.contract_type,
                     c.end_date,
-                    c.new_end_date,
-                    c.renewal_terms,
-                    c.renewal_notes
+                    c.renewal_date,
+                    c.renewal_status,
+                    c.terms
                 FROM contracts c
                 JOIN employees e ON c.emp_id = e.id
                 WHERE c.renewal_status = 'Pending Approval'
                 AND e.manager_id = %s
-                ORDER BY c.renewal_requested_date ASC
+                ORDER BY c.updated_at DESC
             """, (user['employee_id'],))
 
         pending = [dict(row) for row in cursor.fetchall()]
@@ -339,9 +337,9 @@ def show_renewal_requests():
                 **Department:** {contract.get('department', 'N/A')}
                 **Contract Type:** {contract['contract_type']}
                 **Current End Date:** {contract['end_date']}
-                **Proposed New End Date:** {contract['new_end_date']}
-                **Renewal Terms:** {contract['renewal_terms'] or 'Same as current'}
-                **Notes:** {contract['renewal_notes'] or 'N/A'}
+                **Renewal Date:** {contract.get('renewal_date', 'Not set')}
+                **Status:** {contract['renewal_status']}
+                **Terms:** {contract.get('terms', 'N/A')}
                 """)
 
                 # Approval actions
@@ -378,7 +376,6 @@ def initiate_renewal(contract_id, emp_id):
 
         new_end_date = st.date_input("New End Date", value=default_new_end, min_value=current_end)
         renewal_terms = st.text_area("Renewal Terms", value="Same terms as current contract")
-        renewal_notes = st.text_area("Notes", placeholder="Any special conditions or changes...")
 
         submitted = st.form_submit_button("📤 Submit Renewal Request", use_container_width=True)
 
@@ -390,14 +387,12 @@ def initiate_renewal(contract_id, emp_id):
                     cursor.execute("""
                         UPDATE contracts SET
                             renewal_status = 'Pending Approval',
-                            new_end_date = %s,
-                            renewal_terms = %s,
-                            renewal_notes = %s,
-                            renewal_requested_by = %s,
-                            renewal_requested_date = %s
+                            renewal_date = %s,
+                            terms = %s,
+                            updated_at = %s
                         WHERE id = %s
-                    """, (new_end_date.isoformat(), renewal_terms, renewal_notes,
-                         user['employee_id'], datetime.now().isoformat(), contract_id))
+                    """, (new_end_date.isoformat(), renewal_terms,
+                         datetime.now().isoformat(), contract_id))
 
                     # Notify HR
                     create_notification(
@@ -433,7 +428,7 @@ def approve_renewal(contract_id, emp_id):
 
             # Get renewal details
             cursor.execute("""
-                SELECT new_end_date, renewal_terms
+                SELECT renewal_date, terms
                 FROM contracts
                 WHERE id = %s
             """, (contract_id,))
@@ -444,24 +439,22 @@ def approve_renewal(contract_id, emp_id):
                 UPDATE contracts SET
                     end_date = %s,
                     renewal_status = 'Approved',
-                    renewed_date = %s,
-                    renewed_by = %s,
+                    updated_at = %s,
                     status = 'Active'
                 WHERE id = %s
-            """, (renewal['new_end_date'], datetime.now().isoformat(),
-                 user['employee_id'], contract_id))
+            """, (renewal['renewal_date'], datetime.now().isoformat(), contract_id))
 
             # Notify employee
             create_notification(
                 emp_id,
                 "Contract Renewed",
-                f"Your contract has been successfully renewed until {renewal['new_end_date']}. Terms: {renewal['renewal_terms']}",
+                f"Your contract has been successfully renewed until {renewal['renewal_date']}. Terms: {renewal['terms']}",
                 'success'
             )
 
             conn.commit()
-            log_audit(f"Approved contract renewal {contract_id}, new end date: {renewal['new_end_date']}", "contracts", contract_id)
-            st.success(f"✅ Contract renewed until {renewal['new_end_date']}!")
+            log_audit(f"Approved contract renewal {contract_id}, new end date: {renewal['renewal_date']}", "contracts", contract_id)
+            st.success(f"✅ Contract renewed until {renewal['renewal_date']}!")
 
     except Exception as e:
         st.error(f"❌ Error: {str(e)}")
@@ -475,10 +468,10 @@ def reject_renewal(contract_id, emp_id):
             cursor.execute("""
                 UPDATE contracts SET
                     renewal_status = 'Rejected',
-                    new_end_date = NULL,
-                    renewal_terms = NULL
+                    renewal_date = NULL,
+                    updated_at = %s
                 WHERE id = %s
-            """, (contract_id,))
+            """, (datetime.now().isoformat(), contract_id))
 
             # Notify employee
             create_notification(
