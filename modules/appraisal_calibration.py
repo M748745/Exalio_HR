@@ -91,7 +91,7 @@ def show_all_calibration_sessions():
                         cursor = conn.cursor()
                         cursor.execute("""
                             SELECT csr.*, e.first_name, e.last_name, e.position, e.department,
-                                   a.rating as current_rating
+                                   a.manager_rating as current_rating
                             FROM calibration_session_ratings csr
                             JOIN employees e ON csr.emp_id = e.id
                             LEFT JOIN appraisals a ON csr.appraisal_id = a.id
@@ -179,7 +179,7 @@ def create_calibration_session():
                 # Add appraisals from selected departments to the session
                 for dept in departments:
                     cursor.execute("""
-                        SELECT a.id, a.emp_id, a.rating
+                        SELECT a.id, a.emp_id, a.manager_rating as rating
                         FROM appraisals a
                         JOIN employees e ON a.emp_id = e.id
                         WHERE e.department = %s AND a.status IN ('Manager Review', 'HR Review')
@@ -263,13 +263,15 @@ def show_rating_distribution():
             cursor.execute("""
                 SELECT
                     e.department,
-                    a.rating,
+                    a.manager_rating as rating,
                     COUNT(*) as count
                 FROM appraisals a
                 JOIN employees e ON a.emp_id = e.id
-                WHERE a.status IN ('Manager Review', 'HR Review', 'Finalized')
-                GROUP BY e.department, a.rating
-                ORDER BY e.department, a.rating
+                WHERE a.status IN ('Manager Review', 'HR Review', 'Completed')
+                  AND a.manager_rating IS NOT NULL
+                  AND a.manager_rating != ''
+                GROUP BY e.department, a.manager_rating
+                ORDER BY e.department, a.manager_rating
             """)
             dept_dist = [dict(row) for row in cursor.fetchall()]
 
@@ -405,7 +407,7 @@ def show_team_ratings():
         if dept_row:
             dept = dept_row['department']
             cursor.execute("""
-                SELECT e.first_name, e.last_name, e.position, a.rating, a.status
+                SELECT e.first_name, e.last_name, e.position, a.manager_rating as rating, a.status
                 FROM employees e
                 LEFT JOIN appraisals a ON e.id = a.emp_id
                 WHERE e.department = %s AND e.status = 'Active'
