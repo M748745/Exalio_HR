@@ -100,6 +100,13 @@ def show_all_contracts():
         for contract in filtered:
             days_remaining = contract.get('days_remaining')
 
+            # Convert to int if it's a different type
+            try:
+                if days_remaining is not None:
+                    days_remaining = int(days_remaining)
+            except (ValueError, TypeError):
+                days_remaining = None
+
             # Color coding based on days remaining
             if days_remaining is None:
                 status_color = 'rgba(200, 200, 200, 0.1)'  # Gray - Unknown

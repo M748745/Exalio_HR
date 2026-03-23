@@ -354,15 +354,21 @@ def show_asset_assignments():
 
     if assignments:
         for assignment in assignments:
-            status_icon = '🟢' if assignment['status'] == 'Assigned' else '⚪'
-            assigned_date_str = str(assignment['assigned_date'])[:10] if assignment.get('assigned_date') else 'N/A'
-            return_date_str = f" • Returned: {str(assignment['return_date'])[:10]}" if assignment.get('return_date') else ""
+            status_icon = '🟢' if assignment.get('status') == 'Assigned' else '⚪'
+            assigned_date_str = str(assignment.get('assigned_date', ''))[:10] if assignment.get('assigned_date') else 'N/A'
+            return_date_str = f" • Returned: {str(assignment.get('return_date', ''))[:10]}" if assignment.get('return_date') else ""
+            first_name = assignment.get('first_name', 'Unknown')
+            last_name = assignment.get('last_name', '')
+            employee_id = assignment.get('employee_id', 'N/A')
+            department = assignment.get('department', 'N/A')
+            asset_name = assignment.get('asset_name', 'Unknown Asset')
+
             st.markdown(f"""
                 <div style="background: rgba(58, 123, 213, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                    {status_icon} <strong>{assignment['asset_name']}</strong> →
-                    {assignment['first_name']} {assignment['last_name']} ({assignment['employee_id']})<br>
+                    {status_icon} <strong>{asset_name}</strong> →
+                    {first_name} {last_name} ({employee_id})<br>
                     <small style="color: #7d96be;">
-                        Department: {assignment['department']} •
+                        Department: {department} •
                         Assigned: {assigned_date_str}
                         {return_date_str}
                     </small>

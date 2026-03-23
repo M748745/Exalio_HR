@@ -155,21 +155,35 @@ def show_compliance_requirements():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        query = "SELECT * FROM compliance_requirements WHERE 1=1"
-        params = []
+        # Try compliance_requirements first, fallback to compliance table
+        try:
+            query = "SELECT * FROM compliance_requirements WHERE 1=1"
+            params = []
 
-        if category_filter != "All":
-            query += " AND requirement_type = %s"
-            params.append(category_filter)
+            if category_filter != "All":
+                query += " AND requirement_type = %s"
+                params.append(category_filter)
 
-        if status_filter != "All":
-            query += " AND status = %s"
-            params.append(status_filter)
+            if status_filter != "All":
+                query += " AND status = %s"
+                params.append(status_filter)
 
-        query += " ORDER BY next_review_date ASC"
+            query += " ORDER BY next_review_date ASC"
+            cursor.execute(query, params)
+            requirements = [dict(row) for row in cursor.fetchall()]
+        except Exception:
+            # Fallback to compliance table if compliance_requirements doesn't exist
+            conn.rollback()
+            query = "SELECT * FROM compliance WHERE 1=1"
+            params = []
 
-        cursor.execute(query, params)
-        requirements = [dict(row) for row in cursor.fetchall()]
+            if status_filter != "All":
+                query += " AND status = %s"
+                params.append(status_filter)
+
+            query += " ORDER BY due_date ASC"
+            cursor.execute(query, params)
+            requirements = [dict(row) for row in cursor.fetchall()]
 
     if requirements:
         for req in requirements:

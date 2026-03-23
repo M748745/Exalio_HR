@@ -204,25 +204,43 @@ def show_rating_distribution():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT
-                manager_rating as rating,
-                COUNT(*) as count,
-                ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) as percentage
-            FROM appraisals
-            WHERE status IN ('Manager Review', 'HR Review', 'Completed')
-              AND manager_rating IS NOT NULL
-            GROUP BY manager_rating
-            ORDER BY
-                CASE manager_rating
-                    WHEN 'Outstanding' THEN 1
-                    WHEN 'Exceeds Expectations' THEN 2
-                    WHEN 'Meets Expectations' THEN 3
-                    WHEN 'Needs Improvement' THEN 4
-                    WHEN 'Unsatisfactory' THEN 5
-                END
-        """)
-        distribution = [dict(row) for row in cursor.fetchall()]
+        try:
+            cursor.execute("""
+                SELECT
+                    manager_rating as rating,
+                    COUNT(*) as count,
+                    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) as percentage
+                FROM appraisals
+                WHERE status IN ('Manager Review', 'HR Review', 'Completed')
+                  AND manager_rating IS NOT NULL
+                GROUP BY manager_rating
+                ORDER BY
+                    CASE manager_rating
+                        WHEN 'Outstanding' THEN 1
+                        WHEN 'Exceeds Expectations' THEN 2
+                        WHEN 'Meets Expectations' THEN 3
+                        WHEN 'Needs Improvement' THEN 4
+                        WHEN 'Unsatisfactory' THEN 5
+                    END
+            """)
+            distribution = [dict(row) for row in cursor.fetchall()]
+        except Exception:
+            # If manager_rating doesn't exist, try self_rating or return empty
+            conn.rollback()
+            try:
+                cursor.execute("""
+                    SELECT
+                        self_rating as rating,
+                        COUNT(*) as count,
+                        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) as percentage
+                    FROM appraisals
+                    WHERE status IN ('Submitted', 'Manager Review', 'HR Review', 'Completed')
+                      AND self_rating IS NOT NULL
+                    GROUP BY self_rating
+                """)
+                distribution = [dict(row) for row in cursor.fetchall()]
+            except Exception:
+                distribution = []
 
     if distribution:
         st.markdown("#### Overall Rating Distribution")

@@ -55,23 +55,27 @@ def show_all_budgets():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT
-                b.id, b.department, b.fiscal_year, b.period_month, b.amount,
-                b.category, b.notes, b.status, b.created_by, b.created_at, b.updated_at,
-                COALESCE(SUM(e.amount), 0) as spent,
-                b.amount - COALESCE(SUM(e.amount), 0) as remaining
-            FROM budgets b
-            LEFT JOIN expenses e ON b.department = e.department
-                AND e.status = 'Approved'
-                AND EXTRACT(YEAR FROM e.expense_date) = b.fiscal_year
-                AND EXTRACT(MONTH FROM e.expense_date) = b.period_month
-            WHERE b.status = 'Active'
-            GROUP BY b.id, b.department, b.amount, b.fiscal_year, b.period_month, b.category,
-                     b.notes, b.status, b.created_by, b.created_at, b.updated_at
-            ORDER BY b.fiscal_year DESC, b.period_month DESC
-        """)
-        budgets = [dict(row) for row in cursor.fetchall()]
+        try:
+            cursor.execute("""
+                SELECT
+                    b.id, b.department, b.fiscal_year, b.period_month, b.amount,
+                    b.category, b.notes, b.status,
+                    COALESCE(SUM(e.amount), 0) as spent,
+                    b.amount - COALESCE(SUM(e.amount), 0) as remaining
+                FROM budgets b
+                LEFT JOIN expenses e ON b.department = e.department
+                    AND e.status = 'Approved'
+                    AND EXTRACT(YEAR FROM e.expense_date) = b.fiscal_year
+                    AND EXTRACT(MONTH FROM e.expense_date) = b.period_month
+                WHERE b.status = 'Active'
+                GROUP BY b.id, b.department, b.amount, b.fiscal_year, b.period_month, b.category,
+                         b.notes, b.status
+                ORDER BY b.fiscal_year DESC, b.period_month DESC
+            """)
+            budgets = [dict(row) for row in cursor.fetchall()]
+        except Exception:
+            # Budgets table might not exist yet
+            budgets = []
 
     if budgets:
         for budget in budgets:

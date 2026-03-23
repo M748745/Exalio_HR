@@ -48,13 +48,13 @@ def manage_skills():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.id, s.skill_name, s.category, s.description, s.created_at, s.updated_at,
+            SELECT s.id, s.skill_name, s.category, s.description, s.created_at,
                    COUNT(DISTINCT ts.team_id) as team_count,
                    COUNT(DISTINCT es.emp_id) as employee_count
             FROM skills s
             LEFT JOIN team_skills ts ON s.id = ts.skill_id
             LEFT JOIN employee_skills es ON s.id = es.skill_id
-            GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at, s.updated_at
+            GROUP BY s.id, s.skill_name, s.category, s.description, s.created_at
             ORDER BY s.category, s.skill_name
         """)
         skills = cursor.fetchall()
@@ -126,8 +126,7 @@ def manage_skills():
                 # Show expandable details
                 with st.expander("View Details", expanded=False):
                     st.markdown(f"**Full Description:** {skill['description'] or 'No description'}")
-                    st.markdown(f"**Created:** {skill['created_at']}")
-                    st.markdown(f"**Last Updated:** {skill['updated_at']}")
+                    st.markdown(f"**Created:** {skill.get('created_at', 'N/A')}")
 
                 st.markdown("---")
     else:

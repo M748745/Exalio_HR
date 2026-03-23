@@ -117,15 +117,16 @@ def show_all_certificates():
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
+                    issuing_org = cert.get('issuing_organization') or cert.get('issuing_org') or 'N/A'
                     st.markdown(f"""
-                    **Employee:** {cert['name']} ({cert['employee_id']})
-                    **Department:** {cert['department']}
-                    **Position:** {cert['position']}
-                    **Certificate:** {cert['certificate_name']}
-                    **Issuing Organization:** {cert.get('issuing_organization', cert.get('issuing_org', 'N/A'))}
-                    **Issue Date:** {cert['issue_date']}
-                    **Expiry Date:** {cert['expiry_date']}
-                    **Status:** {cert['status']}
+                    **Employee:** {cert.get('name', 'N/A')} ({cert.get('employee_id', 'N/A')})
+                    **Department:** {cert.get('department', 'N/A')}
+                    **Position:** {cert.get('position', 'N/A')}
+                    **Certificate:** {cert.get('certificate_name', 'N/A')}
+                    **Issuing Organization:** {issuing_org}
+                    **Issue Date:** {cert.get('issue_date', 'N/A')}
+                    **Expiry Date:** {cert.get('expiry_date', 'N/A')}
+                    **Status:** {cert.get('status', 'N/A')}
                     """)
 
                 with col2:
