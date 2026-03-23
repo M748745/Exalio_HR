@@ -110,17 +110,17 @@ def show_overview_report():
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT action, created_at
+                SELECT action, timestamp
                 FROM audit_logs
-                ORDER BY created_at DESC
+                ORDER BY timestamp DESC
                 LIMIT 10
             """)
             recent_activity = [dict(row) for row in cursor.fetchall()]
 
         if recent_activity:
             for activity in recent_activity:
-                created_at_str = str(activity['created_at'])[:16] if activity.get('created_at') else 'N/A'
-                st.markdown(f"- {activity['action']} _{created_at_str}_")
+                timestamp_str = str(activity['timestamp'])[:16] if activity.get('timestamp') else 'N/A'
+                st.markdown(f"- {activity['action']} _{timestamp_str}_")
 
 def show_workforce_analytics():
     """Show detailed workforce analytics"""

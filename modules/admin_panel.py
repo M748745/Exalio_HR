@@ -177,13 +177,13 @@ def show_system_statistics():
         # User activity (PostgreSQL compatible)
         cursor.execute("""
             SELECT COUNT(*) as cnt FROM audit_logs
-            WHERE created_at >= NOW() - INTERVAL '7 days'
+            WHERE timestamp >= NOW() - INTERVAL '7 days'
         """)
         weekly_activity = cursor.fetchone()['cnt']
 
         cursor.execute("""
             SELECT COUNT(*) as cnt FROM audit_logs
-            WHERE created_at >= CURRENT_DATE
+            WHERE timestamp >= CURRENT_DATE
         """)
         today_activity = cursor.fetchone()['cnt']
 
@@ -191,7 +191,7 @@ def show_system_statistics():
         cursor.execute("""
             SELECT module, COUNT(*) as count
             FROM audit_logs
-            WHERE created_at >= NOW() - INTERVAL '30 days'
+            WHERE timestamp >= NOW() - INTERVAL '30 days'
             GROUP BY module
             ORDER BY count DESC
             LIMIT 10
@@ -317,7 +317,7 @@ def show_audit_logs():
             SELECT al.*, e.first_name, e.last_name, e.id as employee_id
             FROM audit_logs al
             LEFT JOIN employees e ON al.user_id = e.id
-            WHERE date(al.created_at) BETWEEN %s AND %s
+            WHERE date(al.timestamp) BETWEEN %s AND %s
         """
         params = [date_from.isoformat(), date_to.isoformat()]
 
@@ -325,7 +325,7 @@ def show_audit_logs():
             query += " AND al.module = %s"
             params.append(module_filter)
 
-        query += " ORDER BY al.created_at DESC LIMIT 100"
+        query += " ORDER BY al.timestamp DESC LIMIT 100"
 
         cursor.execute(query, params)
         logs = [dict(row) for row in cursor.fetchall()]
@@ -337,7 +337,7 @@ def show_audit_logs():
         log_data = []
         for log in logs:
             log_data.append({
-                'Time': log['created_at'][:16],
+                'Time': str(log['timestamp'])[:16] if log.get('timestamp') else 'N/A',
                 'User': f"{log.get('first_name', 'System')} {log.get('last_name', '')}",
                 'Module': log['module'],
                 'Action': log['action']
@@ -362,10 +362,10 @@ def show_audit_logs():
 
         # Actions per day (PostgreSQL compatible)
         cursor.execute("""
-            SELECT DATE(created_at) as log_date, COUNT(*) as count
+            SELECT DATE(timestamp) as log_date, COUNT(*) as count
             FROM audit_logs
-            WHERE DATE(created_at) BETWEEN %s AND %s
-            GROUP BY DATE(created_at)
+            WHERE DATE(timestamp) BETWEEN %s AND %s
+            GROUP BY DATE(timestamp)
             ORDER BY log_date
         """, [date_from.isoformat(), date_to.isoformat()])
         daily_stats = [dict(row) for row in cursor.fetchall()]
