@@ -249,14 +249,18 @@ def show_compliance_audits():
     # Display audits
     st.markdown("---")
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM compliance_audits
-            ORDER BY audit_date DESC
-            LIMIT 20
-        """)
-        audits = [dict(row) for row in cursor.fetchall()]
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM compliance_audits
+                ORDER BY audit_date DESC
+                LIMIT 20
+            """)
+            audits = [dict(row) for row in cursor.fetchall()]
+    except Exception:
+        # compliance_audits table doesn't exist in production
+        audits = []
 
     if audits:
         for audit in audits:
