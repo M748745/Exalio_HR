@@ -83,6 +83,7 @@ def show_my_assets():
                 'Poor': 'rgba(241, 100, 100, 0.1)'
             }.get(asset['condition'], 'rgba(58, 123, 213, 0.05)')
 
+            created_str = str(asset.get('created_at', 'N/A'))[:10] if asset.get('created_at') else 'N/A'
             st.markdown(f"""
                 <div style="background: {condition_color}; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 3px solid #c9963a;">
                     <div style="font-size: 24px; margin-bottom: 5px;">{asset_icon}</div>
@@ -90,7 +91,7 @@ def show_my_assets():
                     <small style="color: #7d96be;">
                         Type: {asset['asset_type']} •
                         Serial: {asset['serial_number'] or 'N/A'}<br>
-                        Created: {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'} •
+                        Created: {created_str} •
                         Condition: {asset['condition']}
                     </small>
                 </div>
@@ -130,12 +131,13 @@ def show_asset_history():
                 'Lost': '🔴 Lost'
             }.get(asset['status'], asset['status'])
 
+            created_str = str(asset.get('created_at', 'N/A'))[:10] if asset.get('created_at') else 'N/A'
             st.markdown(f"""
                 <div style="background: rgba(58, 123, 213, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
                     <strong>{asset['asset_name']}</strong> ({asset['asset_type']})<br>
                     <small style="color: #7d96be;">
                         {status_badge} •
-                        Created: {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'}
+                        Created: {created_str}
                     </small>
                 </div>
             """, unsafe_allow_html=True)
@@ -216,6 +218,7 @@ def show_all_assets():
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
+                    created_at_str = str(asset.get('created_at', 'N/A'))[:10] if asset.get('created_at') else 'N/A'
                     st.markdown(f"""
                     **Asset:** {asset.get('asset_name', 'N/A')}
                     **Type:** {asset.get('asset_type', 'N/A')}
@@ -224,7 +227,7 @@ def show_all_assets():
                     **Purchase Cost:** ${asset.get('purchase_cost', 0):,.2f}
                     **Condition:** {asset.get('condition', 'N/A')}
                     **Status:** {asset.get('status', 'N/A')}
-                    **Created:** {asset.get('created_at', 'N/A')[:10] if asset.get('created_at') else 'N/A'}
+                    **Created:** {created_at_str}
                     """)
 
                     if asset.get('assigned_to'):

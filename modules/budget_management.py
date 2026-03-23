@@ -135,7 +135,8 @@ def show_manager_budget():
             cursor.execute("""
                 SELECT b.*, COALESCE(SUM(e.amount), 0) as spent
                 FROM budgets b
-                LEFT JOIN expenses e ON b.department = e.department AND e.status = 'Approved'
+                LEFT JOIN expenses e ON e.status = 'Approved'
+                LEFT JOIN employees emp ON e.emp_id = emp.id AND emp.department = b.department
                 WHERE b.department = %s AND b.status = 'Active'
                 GROUP BY b.id
                 ORDER BY b.fiscal_year DESC
@@ -174,10 +175,10 @@ def show_budget_variance():
                     ELSE 'Within Budget'
                 END as status
             FROM budgets b
-            LEFT JOIN expenses e ON b.department = e.department
-                AND e.status = 'Paid'
+            LEFT JOIN expenses e ON e.status = 'Paid'
                 AND EXTRACT(YEAR FROM e.expense_date) = b.fiscal_year
                 AND EXTRACT(MONTH FROM e.expense_date) = b.period_month
+            LEFT JOIN employees emp ON e.emp_id = emp.id AND emp.department = b.department
             WHERE b.status = 'Active'
             GROUP BY b.id, b.department, b.fiscal_year, b.period_month, b.amount
             ORDER BY b.fiscal_year DESC, b.period_month DESC
@@ -278,10 +279,10 @@ def show_variance_report():
                     COALESCE(SUM(e.amount), 0) as spent,
                     b.amount - COALESCE(SUM(e.amount), 0) as remaining
                 FROM budgets b
-                LEFT JOIN expenses e ON b.department = e.department
-                    AND e.status = 'Paid'
+                LEFT JOIN expenses e ON e.status = 'Paid'
                     AND EXTRACT(YEAR FROM e.expense_date) = b.fiscal_year
                     AND EXTRACT(MONTH FROM e.expense_date) = b.period_month
+                LEFT JOIN employees emp ON e.emp_id = emp.id AND emp.department = b.department
                 WHERE b.department = %s AND b.status = 'Active'
                 GROUP BY b.id, b.fiscal_year, b.period_month, b.amount
                 ORDER BY b.fiscal_year DESC, b.period_month DESC
