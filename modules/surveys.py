@@ -487,32 +487,60 @@ def show_feedback_management():
     """Manage employee feedback"""
     st.markdown("### 💬 Employee Feedback Management")
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT f.*, e.first_name, e.last_name, e.employee_id
-            FROM feedback f
-            LEFT JOIN employees e ON f.emp_id = e.id
-            ORDER BY f.created_at DESC
-            LIMIT 50
-        """)
-        feedback_items = [dict(row) for row in cursor.fetchall()]
+    feedback_items = []
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT f.*, e.first_name, e.last_name, e.employee_id
+                FROM feedback f
+                LEFT JOIN employees e ON f.emp_id = e.id
+                ORDER BY f.created_at DESC
+                LIMIT 50
+            """)
+            feedback_items = [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        st.info("💡 Feedback table not configured. Using survey responses as feedback.")
+        # Fall back to showing survey responses as feedback
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT sr.*, s.title as subject, s.survey_type as feedback_type,
+                           e.first_name, e.last_name, e.employee_id
+                    FROM survey_responses sr
+                    JOIN surveys s ON sr.survey_id = s.id
+                    LEFT JOIN employees e ON sr.emp_id = e.id
+                    ORDER BY sr.submitted_at DESC
+                    LIMIT 50
+                """)
+                feedback_items = [dict(row) for row in cursor.fetchall()]
+        except Exception:
+            st.warning("⚠️ Unable to load feedback data.")
+            return
 
     if feedback_items:
         for item in feedback_items:
-            author = f"{item.get('first_name', 'Anonymous')} {item.get('last_name', '')}" if item['emp_id'] else "Anonymous"
+            author = f"{item.get('first_name', 'Anonymous')} {item.get('last_name', '')}" if item.get('emp_id') else "Anonymous"
 
-            with st.expander(f"💬 {item['subject']} - {author}"):
+            # Handle both feedback table and survey_responses fallback
+            subject = item.get('subject', 'Feedback')
+            feedback_type = item.get('feedback_type', 'Survey Response')
+            date_field = item.get('created_at') or item.get('submitted_at')
+            date_str = str(date_field)[:10] if date_field else 'N/A'
+            feedback_text = item.get('feedback_text') or item.get('responses', 'No content')
+
+            with st.expander(f"💬 {subject} - {author}"):
                 st.markdown(f"""
                 **From:** {author}
-                **Type:** {item['feedback_type']}
-                **Date:** {item['created_at'][:10]}
-                **Status:** {item.get('status', 'New')}
+                **Type:** {feedback_type}
+                **Date:** {date_str}
+                **Status:** {item.get('status', 'Submitted')}
                 """)
 
                 st.markdown("---")
                 st.markdown(f"**Feedback:**")
-                st.info(item['feedback_text'])
+                st.info(feedback_text)
 
                 # HR response
                 if item.get('hr_response'):

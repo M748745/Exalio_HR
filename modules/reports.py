@@ -189,10 +189,10 @@ def show_workforce_analytics():
         cursor.execute("""
             SELECT
                 CASE
-                    WHEN EXTRACT(EPOCH FROM (CURRENT_DATE - hire_date)) / 86400 < 365 THEN '< 1 year'
-                    WHEN EXTRACT(EPOCH FROM (CURRENT_DATE - hire_date)) / 86400 < 730 THEN '1-2 years'
-                    WHEN EXTRACT(EPOCH FROM (CURRENT_DATE - hire_date)) / 86400 < 1095 THEN '2-3 years'
-                    WHEN EXTRACT(EPOCH FROM (CURRENT_DATE - hire_date)) / 86400 < 1825 THEN '3-5 years'
+                    WHEN (CURRENT_DATE - hire_date) < 365 THEN '< 1 year'
+                    WHEN (CURRENT_DATE - hire_date) < 730 THEN '1-2 years'
+                    WHEN (CURRENT_DATE - hire_date) < 1095 THEN '2-3 years'
+                    WHEN (CURRENT_DATE - hire_date) < 1825 THEN '3-5 years'
                     ELSE '5+ years'
                 END as tenure_group,
                 COUNT(*) as count
