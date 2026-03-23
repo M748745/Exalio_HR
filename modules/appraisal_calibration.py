@@ -247,8 +247,13 @@ def show_rating_distribution():
     if distribution:
         st.markdown("#### Overall Rating Distribution")
         for dist in distribution:
-            st.write(f"**{dist['rating']}:** {dist['count']} employees ({dist['percentage']}%)")
-            st.progress(dist['percentage'] / 100)
+            try:
+                percentage = float(dist['percentage']) if dist['percentage'] is not None else 0.0
+            except (ValueError, TypeError):
+                percentage = 0.0
+
+            st.write(f"**{dist['rating']}:** {dist['count']} employees ({percentage:.1f}%)")
+            st.progress(min(max(percentage / 100, 0.0), 1.0))  # Clamp between 0 and 1
             st.markdown("---")
 
         # Department-wise distribution
