@@ -223,7 +223,7 @@ def manage_positions():
             LEFT JOIN teams t ON p.team_id = t.id
             LEFT JOIN employees e ON e.position = p.position_name
             GROUP BY p.id, p.position_name, p.team_id, p.level, p.description,
-                     p.status, p.created_at, p.updated_at, t.team_name
+                     p.status, p.created_at, t.team_name
             ORDER BY t.team_name NULLS LAST, p.level, p.position_name
         """)
         positions = cursor.fetchall()
@@ -281,7 +281,6 @@ def manage_positions():
                 with st.expander("View Details", expanded=False):
                     st.markdown(f"**Description:** {pos['description'] or 'No description'}")
                     st.markdown(f"**Created:** {pos['created_at']}")
-                    st.markdown(f"**Last Updated:** {pos['updated_at']}")
 
                 st.markdown("---")
     else:
