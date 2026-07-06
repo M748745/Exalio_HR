@@ -16,72 +16,76 @@ def show_hr_templates():
     st.markdown("Download and customize ready-to-use HR templates")
     st.markdown("---")
 
-    tabs = st.tabs(["📚 All Templates", "➕ Add Template", "📊 Popular Templates"])
+    if is_hr_admin():
+        tabs = st.tabs(["📚 All Templates", "➕ Upload Template", "📊 Popular Templates", "⚙️ Manage Catalog"])
+    else:
+        tabs = st.tabs(["📚 All Templates", "📊 Popular Templates"])
 
     with tabs[0]:
         show_all_templates()
 
-    with tabs[1]:
-        if is_hr_admin():
+    if is_hr_admin():
+        with tabs[1]:
             show_add_template()
-        else:
-            st.info("Only HR Admin can add templates")
 
-    with tabs[2]:
-        show_popular_templates()
+        with tabs[2]:
+            show_popular_templates()
+
+        with tabs[3]:
+            show_manage_catalog()
+    else:
+        with tabs[1]:
+            show_popular_templates()
 
 
 def show_all_templates():
     """Display all available HR templates"""
     st.markdown("### 📚 Available HR Templates")
 
-    # Template categories
-    categories = {
-        "📝 Forms": [
-            "Leave Request Form",
-            "Expense Claim Form",
-            "Timesheet Template",
-            "Training Request Form",
-            "Asset Request Form"
-        ],
-        "📄 Letters": [
-            "Job Offer Letter",
-            "Promotion Letter",
-            "Warning Letter",
-            "Termination Letter",
-            "Reference Letter"
-        ],
-        "📋 Policies": [
-            "Employee Handbook",
-            "Code of Conduct",
-            "Remote Work Policy",
-            "Leave Policy",
-            "Expense Policy"
-        ],
-        "📊 Evaluations": [
-            "Performance Appraisal Form",
-            "360-Degree Feedback Form",
-            "Probation Review Form",
-            "Self-Assessment Template",
-            "Goal Setting Template"
-        ],
-        "🎓 Onboarding": [
-            "Onboarding Checklist",
-            "New Hire Information Form",
-            "Equipment Assignment Form",
-            "Emergency Contact Form",
-            "Confidentiality Agreement"
-        ],
-        "🚪 Offboarding": [
-            "Exit Interview Template",
-            "Exit Checklist",
-            "Knowledge Transfer Template",
-            "Final Settlement Form",
-            "Clearance Certificate"
-        ]
+    # DEBUG: Show admin status
+    if is_hr_admin():
+        st.success("✅ You are logged in as HR Admin - You can manage templates in the 'Manage Catalog' tab")
+    else:
+        st.info("ℹ️ You are logged in as a regular user")
+
+    # Get template categories from database
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Initialize default templates if table is empty
+        cursor.execute("SELECT COUNT(*) as count FROM hr_template_catalog")
+        if cursor.fetchone()['count'] == 0:
+            init_default_templates(cursor)
+            conn.commit()
+
+        # Load templates from database
+        cursor.execute("""
+            SELECT id, template_name, category, description
+            FROM hr_template_catalog
+            WHERE is_active = 1
+            ORDER BY category, display_order, template_name
+        """)
+        catalog_templates = [dict(row) for row in cursor.fetchall()]
+
+    # Group by category
+    categories = {}
+    category_icons = {
+        "Forms": "📝",
+        "Letters": "📄",
+        "Policies": "📋",
+        "Evaluations": "📊",
+        "Onboarding": "🎓",
+        "Offboarding": "🚪",
+        "Other": "📁"
     }
 
-    # Get saved templates from database
+    for template in catalog_templates:
+        cat = template['category']
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append(template)
+
+    # Get saved templates (uploaded files) from database
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -93,10 +97,11 @@ def show_all_templates():
 
     # Display categories
     for category, templates in categories.items():
-        with st.expander(f"{category} ({len(templates)} templates)"):
+        icon = category_icons.get(category, "📁")
+        with st.expander(f"{icon} {category} ({len(templates)} templates)"):
             for template in templates:
-                # Check if template exists in database
-                saved = next((t for t in saved_templates if t['document_name'] == template), None)
+                # Check if template file is uploaded
+                saved = next((t for t in saved_templates if t['document_name'] == template['template_name']), None)
 
                 if is_hr_admin() and saved:
                     col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
@@ -104,22 +109,32 @@ def show_all_templates():
                     col1, col2, col3 = st.columns([3, 1, 1])
 
                 with col1:
-                    st.markdown(f"**{template}**")
+                    st.markdown(f"**{template['template_name']}**")
+                    if template.get('description'):
+                        st.caption(template['description'])
 
                 with col2:
                     if saved:
-                        st.markdown("✅ Uploaded")
+                        if is_hr_admin():
+                            st.markdown("✅ Uploaded")
+                        else:
+                            st.markdown("✅ Available")
                     else:
-                        st.markdown("📥 Default")
+                        st.markdown("📥 Not Uploaded")
 
                 with col3:
-                    if st.button("📄 View", key=f"view_{template}"):
-                        show_template_preview(template)
+                    if saved and saved.get('file_content'):
+                        if st.button("📥 Download", key=f"dl_{template['id']}_{saved['id']}"):
+                            from modules.documents import download_document
+                            download_document(saved['id'], saved['file_name'], saved.get('mime_type', 'application/pdf'))
+                    else:
+                        if st.button("📄 Info", key=f"info_{template['id']}"):
+                            show_template_preview(template['template_name'])
 
-                # Admin delete button for uploaded templates
+                # Admin delete button for uploaded files
                 if is_hr_admin() and saved:
                     with col4:
-                        template_desc = f"Template: {template}"
+                        template_desc = f"File: {template['template_name']}"
                         if render_delete_button("documents", saved['id'], template_desc, f"del_tpl_{saved['id']}"):
                             st.rerun()
 
@@ -317,3 +332,180 @@ def get_template_content(template_name):
             LIMIT 1
         """, (template_name,))
         return cursor.fetchone()
+
+
+def init_default_templates(cursor):
+    """Initialize default template catalog"""
+    default_templates = [
+        # Forms
+        ("Leave Request Form", "Forms", "Standard form for employees to request time off"),
+        ("Expense Claim Form", "Forms", "Form for submitting business expense reimbursements"),
+        ("Timesheet Template", "Forms", "Weekly/monthly timesheet for tracking work hours"),
+        ("Training Request Form", "Forms", "Request form for training and development programs"),
+        ("Asset Request Form", "Forms", "Form to request company assets and equipment"),
+
+        # Letters
+        ("Job Offer Letter", "Letters", "Professional job offer template with position details"),
+        ("Promotion Letter", "Letters", "Letter template for employee promotions"),
+        ("Warning Letter", "Letters", "Formal warning letter template for disciplinary actions"),
+        ("Termination Letter", "Letters", "Employee termination letter template"),
+        ("Reference Letter", "Letters", "Employment reference letter template"),
+
+        # Policies
+        ("Employee Handbook", "Policies", "Complete employee handbook covering all policies"),
+        ("Code of Conduct", "Policies", "Company code of conduct and ethics policy"),
+        ("Remote Work Policy", "Policies", "Policy for remote and hybrid work arrangements"),
+        ("Leave Policy", "Policies", "Comprehensive leave policy documentation"),
+        ("Expense Policy", "Policies", "Company expense reimbursement policy"),
+
+        # Evaluations
+        ("Performance Appraisal Form", "Evaluations", "Annual performance review template"),
+        ("360-Degree Feedback Form", "Evaluations", "Multi-source feedback evaluation form"),
+        ("Probation Review Form", "Evaluations", "Employee probation period assessment"),
+        ("Self-Assessment Template", "Evaluations", "Employee self-evaluation form"),
+        ("Goal Setting Template", "Evaluations", "SMART goals and objectives template"),
+
+        # Onboarding
+        ("Onboarding Checklist", "Onboarding", "Complete new hire onboarding checklist"),
+        ("New Hire Information Form", "Onboarding", "Personal information collection form"),
+        ("Equipment Assignment Form", "Onboarding", "IT equipment and access request form"),
+        ("Emergency Contact Form", "Onboarding", "Emergency contact information form"),
+        ("Confidentiality Agreement", "Onboarding", "NDA and confidentiality agreement"),
+
+        # Offboarding
+        ("Exit Interview Template", "Offboarding", "Structured exit interview questionnaire"),
+        ("Exit Checklist", "Offboarding", "Employee departure checklist"),
+        ("Knowledge Transfer Template", "Offboarding", "Documentation for knowledge handover"),
+        ("Final Settlement Form", "Offboarding", "Final payroll and benefits settlement"),
+        ("Clearance Certificate", "Offboarding", "Employee clearance and release certificate")
+    ]
+
+    for idx, (name, category, description) in enumerate(default_templates):
+        cursor.execute("""
+            INSERT INTO hr_template_catalog (template_name, category, description, display_order)
+            VALUES (%s, %s, %s, %s)
+        """, (name, category, description, idx))
+
+
+def show_manage_catalog():
+    """Admin interface to manage template catalog"""
+    st.markdown("### ⚙️ Manage Template Catalog")
+    st.markdown("Add, edit, or delete template names from the catalog")
+    st.markdown("---")
+
+    # Add new template
+    with st.expander("➕ Add New Template Name", expanded=False):
+        with st.form("add_template_name"):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                new_name = st.text_input("Template Name *", placeholder="e.g., Performance Improvement Plan")
+                new_category = st.selectbox("Category *", [
+                    "Forms", "Letters", "Policies", "Evaluations", "Onboarding", "Offboarding", "Other"
+                ])
+
+            with col2:
+                new_description = st.text_area("Description", placeholder="Brief description of this template...")
+                new_order = st.number_input("Display Order", min_value=0, value=0, help="Lower numbers appear first")
+
+            submitted = st.form_submit_button("➕ Add Template Name", use_container_width=True)
+
+            if submitted:
+                if not all([new_name, new_category]):
+                    st.error("❌ Please fill template name and category")
+                else:
+                    try:
+                        user = get_current_user()
+                        with get_db_connection() as conn:
+                            cursor = conn.cursor()
+
+                            cursor.execute("""
+                                INSERT INTO hr_template_catalog (
+                                    template_name, category, description, display_order, created_by
+                                ) VALUES (%s, %s, %s, %s, %s)
+                            """, (new_name, new_category, new_description, new_order, user['employee_id']))
+
+                            conn.commit()
+                            log_audit(f"Added template to catalog: {new_name}", "hr_template_catalog", cursor.lastrowid)
+                            st.success(f"✅ Template '{new_name}' added to catalog!")
+                            st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Error: {str(e)}")
+
+    st.markdown("---")
+
+    # List all templates with delete option
+    st.markdown("### 📋 Current Template Catalog")
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, template_name, category, description, display_order, is_active
+            FROM hr_template_catalog
+            ORDER BY category, display_order, template_name
+        """)
+        all_templates = [dict(row) for row in cursor.fetchall()]
+
+    if all_templates:
+        # Group by category
+        by_category = {}
+        for template in all_templates:
+            cat = template['category']
+            if cat not in by_category:
+                by_category[cat] = []
+            by_category[cat].append(template)
+
+        for category, templates in by_category.items():
+            st.markdown(f"#### 📂 {category} ({len(templates)} templates)")
+
+            for template in templates:
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+
+                with col1:
+                    status = "✅ Active" if template['is_active'] else "❌ Inactive"
+                    st.markdown(f"**{template['template_name']}** ({status})")
+                    if template.get('description'):
+                        st.caption(template['description'])
+
+                with col2:
+                    st.markdown(f"Order: {template['display_order']}")
+
+                with col3:
+                    if template['is_active']:
+                        if st.button("❌ Deactivate", key=f"deact_{template['id']}", use_container_width=True):
+                            toggle_template_status(template['id'], 0)
+                            st.rerun()
+                    else:
+                        if st.button("✅ Activate", key=f"act_{template['id']}", use_container_width=True):
+                            toggle_template_status(template['id'], 1)
+                            st.rerun()
+
+                with col4:
+                    template_desc = f"Template: {template['template_name']}"
+                    if render_delete_button("hr_template_catalog", template['id'], template_desc, f"del_cat_{template['id']}"):
+                        st.rerun()
+
+                st.markdown("---")
+    else:
+        st.info("No templates in catalog. Click 'Add New Template Name' to get started.")
+
+
+def toggle_template_status(template_id, new_status):
+    """Toggle template active status"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE hr_template_catalog
+                SET is_active = %s
+                WHERE id = %s
+            """, (new_status, template_id))
+            conn.commit()
+
+            status_text = "activated" if new_status else "deactivated"
+            log_audit(f"Template {status_text}", "hr_template_catalog", template_id)
+            st.success(f"✅ Template {status_text} successfully!")
+
+    except Exception as e:
+        st.error(f"❌ Error: {str(e)}")
