@@ -218,6 +218,31 @@ def apply_migrations(cursor):
             cursor.execute("ALTER TABLE documents ADD COLUMN description TEXT")
             print("✅ Added description column to documents")
 
+        # Migration for BLOB storage
+        if 'file_content' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN file_content BYTEA")
+            print("✅ Added file_content BLOB column to documents")
+
+        if 'mime_type' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN mime_type TEXT")
+            print("✅ Added mime_type column to documents")
+
+        if 'visibility' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'Private'")
+            print("✅ Added visibility column to documents")
+
+        if 'category' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN category TEXT DEFAULT 'General'")
+            print("✅ Added category column to documents")
+
+        if 'target_department' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN target_department TEXT")
+            print("✅ Added target_department column to documents")
+
+        if 'document_name' not in doc_columns:
+            cursor.execute("ALTER TABLE documents ADD COLUMN document_name TEXT")
+            print("✅ Added document_name column to documents")
+
         # Migration 5: Add training_catalog columns
         cursor.execute("""
             SELECT column_name FROM information_schema.columns

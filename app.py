@@ -723,6 +723,10 @@ def main():
                 st.session_state.current_page = 'documents'
                 st.rerun()
 
+            if st.button("📋 HR Templates", key="hr_templates", use_container_width=True):
+                st.session_state.current_page = 'hr_templates'
+                st.rerun()
+
             if st.button("📋 Document Approval", key="doc_approval", use_container_width=True):
                 st.session_state.current_page = 'document_approval'
                 st.rerun()
@@ -891,6 +895,9 @@ def main():
     elif current_page == 'documents':
         from modules.documents import show_document_management
         show_document_management()
+    elif current_page == 'hr_templates':
+        from modules.hr_templates import show_hr_templates
+        show_hr_templates()
     elif current_page == 'announcements':
         from modules.announcements import show_announcements_management
         show_announcements_management()
