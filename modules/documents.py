@@ -284,12 +284,15 @@ def show_all_documents():
                 col1, col2 = st.columns([3, 1])
 
                 with col1:
+                    file_size = doc.get('file_size', 0)
+                    size_kb = (file_size / 1024) if file_size and file_size > 0 else 0
+
                     st.markdown(f"""
                     **Document:** {doc.get('document_name') or doc.get('title', 'Untitled')}
                     **Type:** {doc.get('document_type', 'Unknown')}
                     **Uploaded by:** {doc.get('first_name', 'Unknown')} {doc.get('last_name', '')} ({doc.get('employee_id', 'N/A')})
                     **File:** {doc.get('file_name', 'N/A')}
-                    **Size:** {doc.get('file_size', 0) / 1024:.1f} KB
+                    **Size:** {size_kb:.1f} KB
                     **Status:** {doc.get('status', 'Unknown')}
                     **Uploaded:** {str(doc.get('created_at', 'N/A'))[:10]}
                     """)
