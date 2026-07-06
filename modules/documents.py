@@ -6,6 +6,8 @@ Central repository for company documents, policies, and files
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+import base64
+from io import BytesIO
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, is_manager, create_notification, log_audit
 from modules.delete_utils import render_delete_button
@@ -98,9 +100,12 @@ def show_my_documents():
                     st.markdown(f"**File:** {doc.get('file_name', 'N/A')}")
                     st.markdown(f"**Size:** {doc.get('file_size', 0)/1024:.1f} KB" if doc.get('file_size') else "Size: N/A")
 
-                # Download button (simulated)
-                if st.button(f"📥 Download", key=f"dl_{doc['id']}"):
-                    st.info("Download functionality: In production, this would download the actual file")
+                # Download button with real file download
+                if doc.get('file_content'):
+                    if st.button(f"📥 Download", key=f"dl_{doc['id']}"):
+                        download_document(doc['id'], doc.get('file_name', 'document'), doc.get('mime_type', 'application/octet-stream'))
+                else:
+                    st.info("📥 File not available (legacy record)")
     else:
         st.info("No documents available")
 
@@ -136,7 +141,10 @@ def show_company_documents():
                     st.markdown(f"_{doc['document_type']}_")
                 with col3:
                     if st.button("📥", key=f"pub_{doc['id']}"):
-                        st.info("Download: File would be downloaded")
+                        if doc.get('file_content'):
+                            download_document(doc['id'], doc.get('file_name', 'document'), doc.get('mime_type', 'application/octet-stream'))
+                        else:
+                            st.info("File not available")
     else:
         st.info("No public documents yet")
 
@@ -210,11 +218,17 @@ def show_upload_document():
         if submitted:
             if not all([document_name, document_type, visibility]):
                 st.error("❌ Please fill all required fields")
+            elif not uploaded_file:
+                st.error("❌ Please upload a file")
             else:
-                file_name = uploaded_file.name if uploaded_file else "document.pdf"
-                file_size = uploaded_file.size if uploaded_file else 0
+                file_name = uploaded_file.name
+                file_size = uploaded_file.size
+                file_content = uploaded_file.read()
+                mime_type = uploaded_file.type
+
                 create_document(document_name, document_type, category, visibility,
-                              description, file_name, file_size, target_dept)
+                              description, file_name, file_size, target_dept,
+                              file_content, mime_type)
                 st.rerun()
 
 def show_all_documents():
@@ -328,33 +342,76 @@ def show_archived_documents():
         st.info("No archived documents")
 
 def create_document(document_name, document_type, category, visibility,
-                   description, file_name, file_size, target_dept):
-    """Create new document record"""
+                   description, file_name, file_size, target_dept,
+                   file_content, mime_type):
+    """Create new document record with BLOB storage"""
     user = get_current_user()
 
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Simulate file upload path
+            # Store file path for reference
             file_path = f"documents/{user['employee_id']}_{datetime.now().timestamp()}_{file_name}"
 
             cursor.execute("""
                 INSERT INTO documents (
                     emp_id, document_name, document_type, category,
                     description, file_name, file_path, file_size,
-                    visibility, target_department, status
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active')
+                    visibility, target_department, status,
+                    file_content, mime_type
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active', %s, %s)
             """, (user['employee_id'], document_name, document_type, category,
                  description, file_name, file_path, file_size,
-                 visibility, target_dept))
+                 visibility, target_dept, file_content, mime_type))
 
             doc_id = cursor.lastrowid
 
             conn.commit()
-            log_audit(f"Uploaded document: {document_name}", "documents", doc_id)
+            log_audit(f"Uploaded document: {document_name} ({file_size/1024:.1f} KB)", "documents", doc_id)
             st.success(f"✅ Document uploaded successfully! ID: DOC-{doc_id}")
             st.balloons()
 
     except Exception as e:
-        st.error(f"❌ Error: {str(e)}")
+        st.error(f"❌ Error uploading document: {str(e)}")
+
+
+def download_document(doc_id, file_name, mime_type):
+    """Download document from BLOB storage"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT file_content, file_name, mime_type, file_size
+                FROM documents
+                WHERE id = %s
+            """, (doc_id,))
+
+            result = cursor.fetchone()
+
+            if result and result['file_content']:
+                file_content = bytes(result['file_content'])
+                file_name = result['file_name'] or file_name
+                mime_type = result['mime_type'] or mime_type
+
+                # Create download button
+                b64 = base64.b64encode(file_content).decode()
+                href = f'<a href="data:{mime_type};base64,{b64}" download="{file_name}">Click here to download {file_name}</a>'
+                st.markdown(href, unsafe_allow_html=True)
+
+                # Update download count
+                cursor.execute("""
+                    UPDATE documents
+                    SET download_count = COALESCE(download_count, 0) + 1
+                    WHERE id = %s
+                """, (doc_id,))
+                conn.commit()
+
+                st.success(f"✅ Ready to download: {file_name}")
+
+            else:
+                st.error("❌ File content not found")
+
+    except Exception as e:
+        st.error(f"❌ Error downloading file: {str(e)}")
