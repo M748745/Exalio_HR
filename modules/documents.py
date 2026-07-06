@@ -286,15 +286,23 @@ def show_all_documents():
                 with col1:
                     file_size = doc.get('file_size', 0)
                     size_kb = (file_size / 1024) if file_size and file_size > 0 else 0
+                    doc_name = doc.get('document_name') or doc.get('title', 'Untitled')
+                    doc_type = doc.get('document_type', 'Unknown')
+                    first_name = doc.get('first_name', 'Unknown')
+                    last_name = doc.get('last_name', '')
+                    emp_id = doc.get('employee_id', 'N/A')
+                    file_name = doc.get('file_name', 'N/A')
+                    status = doc.get('status', 'Unknown')
+                    created = str(doc.get('created_at', 'N/A'))[:10]
 
                     st.markdown(f"""
-                    **Document:** {doc.get('document_name') or doc.get('title', 'Untitled')}
-                    **Type:** {doc.get('document_type', 'Unknown')}
-                    **Uploaded by:** {doc.get('first_name', 'Unknown')} {doc.get('last_name', '')} ({doc.get('employee_id', 'N/A')})
-                    **File:** {doc.get('file_name', 'N/A')}
+                    **Document:** {doc_name}
+                    **Type:** {doc_type}
+                    **Uploaded by:** {first_name} {last_name} ({emp_id})
+                    **File:** {file_name}
                     **Size:** {size_kb:.1f} KB
-                    **Status:** {doc.get('status', 'Unknown')}
-                    **Uploaded:** {str(doc.get('created_at', 'N/A'))[:10]}
+                    **Status:** {status}
+                    **Uploaded:** {created}
                     """)
 
                     if doc.get('description'):
