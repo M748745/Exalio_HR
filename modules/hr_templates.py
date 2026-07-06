@@ -7,6 +7,7 @@ import streamlit as st
 from datetime import datetime
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, log_audit
+from modules.delete_utils import render_delete_button
 
 
 def show_hr_templates():
@@ -94,14 +95,18 @@ def show_all_templates():
     for category, templates in categories.items():
         with st.expander(f"{category} ({len(templates)} templates)"):
             for template in templates:
-                col1, col2, col3 = st.columns([3, 1, 1])
+                # Check if template exists in database
+                saved = next((t for t in saved_templates if t['document_name'] == template), None)
+
+                if is_hr_admin() and saved:
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                else:
+                    col1, col2, col3 = st.columns([3, 1, 1])
 
                 with col1:
                     st.markdown(f"**{template}**")
 
                 with col2:
-                    # Check if template exists in database
-                    saved = next((t for t in saved_templates if t['document_name'] == template), None)
                     if saved:
                         st.markdown("✅ Uploaded")
                     else:
@@ -111,13 +116,24 @@ def show_all_templates():
                     if st.button("📄 View", key=f"view_{template}"):
                         show_template_preview(template)
 
+                # Admin delete button for uploaded templates
+                if is_hr_admin() and saved:
+                    with col4:
+                        template_desc = f"Template: {template}"
+                        if render_delete_button("documents", saved['id'], template_desc, f"del_tpl_{saved['id']}"):
+                            st.rerun()
+
     # Display saved custom templates
     if saved_templates:
         st.markdown("---")
         st.markdown("### 💾 Custom Uploaded Templates")
         for template in saved_templates:
             if template['document_name'] not in [t for cats in categories.values() for t in cats]:
-                col1, col2, col3 = st.columns([3, 1, 1])
+                if is_hr_admin():
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                else:
+                    col1, col2, col3 = st.columns([3, 1, 1])
+
                 with col1:
                     st.markdown(f"**{template['document_name']}**")
                 with col2:
@@ -126,6 +142,13 @@ def show_all_templates():
                     if st.button("📥 Download", key=f"dl_custom_{template['id']}"):
                         from modules.documents import download_document
                         download_document(template['id'], template['file_name'], template.get('mime_type', 'application/pdf'))
+
+                # Admin delete button for custom templates
+                if is_hr_admin():
+                    with col4:
+                        template_desc = f"Custom Template: {template['document_name']}"
+                        if render_delete_button("documents", template['id'], template_desc, f"del_custom_{template['id']}"):
+                            st.rerun()
 
 
 def show_template_preview(template_name):
@@ -240,7 +263,7 @@ def show_popular_templates():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT document_name, document_type, download_count, file_size, created_at
+            SELECT id, document_name, document_type, download_count, file_size, created_at
             FROM documents
             WHERE category = 'HR Template' AND visibility = 'Public'
             ORDER BY download_count DESC
@@ -251,7 +274,10 @@ def show_popular_templates():
     if popular:
         for idx, template in enumerate(popular, 1):
             with st.container():
-                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                if is_hr_admin():
+                    col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+                else:
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
 
                 with col1:
                     st.markdown(f"**{idx}. {template['document_name']}**")
@@ -267,6 +293,13 @@ def show_popular_templates():
                 with col4:
                     if st.button("📥", key=f"pop_{idx}"):
                         st.info(f"Download {template['document_name']}")
+
+                # Admin delete button
+                if is_hr_admin():
+                    with col5:
+                        template_desc = f"Popular Template: {template['document_name']}"
+                        if render_delete_button("documents", template['id'], template_desc, f"del_pop_{template['id']}"):
+                            st.rerun()
 
                 st.markdown("---")
     else:
