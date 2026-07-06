@@ -243,6 +243,21 @@ def apply_migrations(cursor):
             cursor.execute("ALTER TABLE documents ADD COLUMN document_name TEXT")
             print("✅ Added document_name column to documents")
 
+        # Migration: Create HR template catalog table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hr_template_catalog (
+                id SERIAL PRIMARY KEY,
+                template_name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                description TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by INTEGER,
+                display_order INTEGER DEFAULT 0
+            )
+        """)
+        print("✅ Created hr_template_catalog table")
+
         # Migration 5: Add training_catalog columns
         cursor.execute("""
             SELECT column_name FROM information_schema.columns
