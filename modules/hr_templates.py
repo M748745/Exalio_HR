@@ -55,12 +55,12 @@ def show_all_templates():
         # Check if table exists, if not create it
         try:
             cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables
-                    WHERE table_name = 'hr_template_catalog'
-                )
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'hr_template_catalog'
             """)
-            table_exists = cursor.fetchone()[0]
+            table_exists = cursor.fetchone() is not None
 
             if not table_exists:
                 # Create table
@@ -77,12 +77,15 @@ def show_all_templates():
                     )
                 """)
                 conn.commit()
+                st.success("✅ Created hr_template_catalog table")
 
             # Initialize default templates if table is empty
             cursor.execute("SELECT COUNT(*) as count FROM hr_template_catalog")
-            if cursor.fetchone()['count'] == 0:
+            count_result = cursor.fetchone()
+            if count_result['count'] == 0:
                 init_default_templates(cursor)
                 conn.commit()
+                st.success("✅ Initialized 30 default templates")
 
             # Load templates from database
             cursor.execute("""
@@ -94,8 +97,15 @@ def show_all_templates():
             catalog_templates = [dict(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            st.error(f"Error loading templates: {str(e)}")
+            st.error(f"❌ Error loading templates: {str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
             catalog_templates = []
+
+    # Check if we have any templates
+    if not catalog_templates:
+        st.warning("⚠️ No templates found in catalog. Use the 'Manage Catalog' tab to add templates.")
+        return
 
     # Group by category
     categories = {}

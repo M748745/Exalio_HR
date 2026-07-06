@@ -106,6 +106,13 @@ def show_my_documents():
                         download_document(doc['id'], doc.get('file_name', 'document'), doc.get('mime_type', 'application/octet-stream'))
                 else:
                     st.info("📥 File not available (legacy record)")
+
+                # Admin delete button
+                if is_hr_admin():
+                    st.markdown("---")
+                    doc_desc = f"Document: {doc.get('document_name', 'Untitled')}"
+                    if render_delete_button("documents", doc['id'], doc_desc, f"del_mydoc_{doc['id']}"):
+                        st.rerun()
     else:
         st.info("No documents available")
 
@@ -271,30 +278,42 @@ def show_all_documents():
         documents = [dict(row) for row in cursor.fetchall()]
 
     if documents:
-        df = pd.DataFrame(documents)
-        # Use only columns that exist in schema
-        available_cols = [col for col in ['title', 'document_type', 'status', 'created_at'] if col in df.columns]
-        df_display = df[available_cols].copy()
+        # Display documents with admin delete option
+        for doc in documents:
+            with st.expander(f"📄 {doc.get('document_name') or doc.get('title', 'Untitled')} ({doc.get('document_type', 'Unknown')})"):
+                col1, col2 = st.columns([3, 1])
 
-        # Rename columns for display
-        col_mapping = {
-            'title': 'Document',
-            'document_type': 'Type',
-            'status': 'Status',
-            'created_at': 'Uploaded'
-        }
-        df_display = df_display.rename(columns={k: v for k, v in col_mapping.items() if k in df_display.columns})
+                with col1:
+                    st.markdown(f"""
+                    **Document:** {doc.get('document_name') or doc.get('title', 'Untitled')}
+                    **Type:** {doc.get('document_type', 'Unknown')}
+                    **Uploaded by:** {doc.get('first_name', 'Unknown')} {doc.get('last_name', '')} ({doc.get('employee_id', 'N/A')})
+                    **File:** {doc.get('file_name', 'N/A')}
+                    **Size:** {doc.get('file_size', 0) / 1024:.1f} KB
+                    **Status:** {doc.get('status', 'Unknown')}
+                    **Uploaded:** {str(doc.get('created_at', 'N/A'))[:10]}
+                    """)
 
-        # Format the date properly - convert to string if it's a datetime
-        if 'Uploaded' in df_display.columns:
-            df_display['Uploaded'] = pd.to_datetime(df_display['Uploaded']).dt.strftime('%Y-%m-%d')
+                    if doc.get('description'):
+                        st.info(f"📝 {doc['description']}")
 
-        st.dataframe(df_display, use_container_width=True, hide_index=True)
+                with col2:
+                    # Download button
+                    if doc.get('file_content'):
+                        if st.button("📥 Download", key=f"dl_doc_{doc['id']}", use_container_width=True):
+                            download_document(doc['id'], doc.get('file_name', 'document'), doc.get('mime_type', 'application/octet-stream'))
 
-        # Bulk actions
+                    # Admin delete button
+                    if is_hr_admin():
+                        st.markdown("---")
+                        doc_desc = f"Document: {doc.get('document_name') or doc.get('title', 'Untitled')}"
+                        if render_delete_button("documents", doc['id'], doc_desc, f"del_doc_{doc['id']}"):
+                            st.rerun()
+
+        # Summary count
         st.markdown("---")
-        if st.button("📥 Export List"):
-            st.success("Document list exported (simulated)")
+        st.info(f"📊 Showing {len(documents)} document(s)")
+
     else:
         st.info("No documents found")
 
@@ -337,7 +356,18 @@ def show_archived_documents():
         for doc in archived:
             archived_date = doc.get('archived_date') or doc.get('created_at', 'N/A')
             archived_date_str = str(archived_date)[:10] if archived_date != 'N/A' else 'N/A'
-            st.markdown(f"📦 **{doc['document_name']}** - Archived on {archived_date_str}")
+
+            col1, col2 = st.columns([4, 1])
+
+            with col1:
+                st.markdown(f"📦 **{doc.get('document_name', 'Untitled')}** - Archived on {archived_date_str}")
+
+            with col2:
+                if is_hr_admin():
+                    doc_desc = f"Archived Doc: {doc.get('document_name', 'Untitled')}"
+                    if render_delete_button("documents", doc['id'], doc_desc, f"del_arch_{doc['id']}"):
+                        st.rerun()
+
     else:
         st.info("No archived documents")
 
