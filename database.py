@@ -258,6 +258,29 @@ def apply_migrations(cursor):
         """)
         print("✅ Created hr_template_catalog table")
 
+        # Migration: Fix audit_logs table - add missing columns
+        cursor.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name='audit_logs'
+        """)
+        audit_columns = [col['column_name'] for col in cursor.fetchall()]
+
+        if 'table_name' not in audit_columns:
+            cursor.execute("ALTER TABLE audit_logs ADD COLUMN table_name TEXT")
+            print("✅ Added table_name column to audit_logs")
+
+        if 'record_id' not in audit_columns:
+            cursor.execute("ALTER TABLE audit_logs ADD COLUMN record_id INTEGER")
+            print("✅ Added record_id column to audit_logs")
+
+        if 'old_values' not in audit_columns:
+            cursor.execute("ALTER TABLE audit_logs ADD COLUMN old_values TEXT")
+            print("✅ Added old_values column to audit_logs")
+
+        if 'new_values' not in audit_columns:
+            cursor.execute("ALTER TABLE audit_logs ADD COLUMN new_values TEXT")
+            print("✅ Added new_values column to audit_logs")
+
         # Migration 5: Add training_catalog columns
         cursor.execute("""
             SELECT column_name FROM information_schema.columns
