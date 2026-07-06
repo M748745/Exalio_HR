@@ -9,6 +9,7 @@ from datetime import datetime, date, timedelta
 from database import get_db_connection
 from auth import (get_current_user, is_hr_admin, is_manager, is_employee,
                  get_accessible_employees, create_notification, log_audit)
+from modules.delete_utils import render_delete_button
 
 def show_leave_management():
     """Main leave management interface"""
@@ -253,7 +254,10 @@ def show_pending_approvals():
 
             # Approval actions
             st.markdown("---")
-            col1, col2, col3 = st.columns(3)
+            if is_hr_admin():
+                col1, col2, col3, col4 = st.columns(4)
+            else:
+                col1, col2, col3 = st.columns(3)
 
             with col1:
                 if st.button(f"✅ Approve", key=f"approve_{req['id']}", use_container_width=True):
@@ -267,6 +271,12 @@ def show_pending_approvals():
 
             with col3:
                 comments = st.text_input("Comments", key=f"comments_{req['id']}", placeholder="Optional comments...")
+
+            if is_hr_admin():
+                with col4:
+                    leave_desc = f"LR-{req['id']} - {req['first_name']} {req['last_name']} ({req['leave_type']})"
+                    if render_delete_button("leave_requests", req['id'], leave_desc, f"delete_leave_{req['id']}"):
+                        st.rerun()
 
 def approve_leave_request(request_id, emp_id, leave_type, days):
     """Approve leave request (manager or HR)"""
@@ -500,5 +510,21 @@ def show_all_leave_requests():
         df_display.columns = ['Emp ID', 'First Name', 'Last Name', 'Leave Type', 'Start', 'End', 'Days', 'Status']
 
         st.dataframe(df_display, use_container_width=True, hide_index=True)
+
+        # Admin delete functionality
+        if is_hr_admin():
+            st.markdown("---")
+            st.markdown("### 🗑️ Admin Delete Options")
+            selected_id = st.selectbox(
+                "Select leave request to delete",
+                options=[r['id'] for r in requests],
+                format_func=lambda x: f"LR-{x} - {next(r['first_name'] + ' ' + r['last_name'] for r in requests if r['id'] == x)} ({next(r['leave_type'] for r in requests if r['id'] == x)})"
+            )
+
+            selected_req = next((r for r in requests if r['id'] == selected_id), None)
+            if selected_req:
+                leave_desc = f"LR-{selected_req['id']} - {selected_req['first_name']} {selected_req['last_name']} ({selected_req['leave_type']})"
+                if render_delete_button("leave_requests", selected_id, leave_desc, f"delete_selected_leave"):
+                    st.rerun()
     else:
         st.info("No leave requests found")

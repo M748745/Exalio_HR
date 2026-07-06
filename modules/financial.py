@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime, date
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, create_notification, log_audit
+from modules.delete_utils import render_delete_button
 
 def show_financial_management():
     """Main financial management interface"""

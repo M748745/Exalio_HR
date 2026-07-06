@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime, date, timedelta
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, is_manager, create_notification, log_audit
+from modules.delete_utils import render_delete_button
 
 def show_career_plans_management():
     """Main career plans interface"""

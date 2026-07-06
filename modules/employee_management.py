@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, is_manager, get_accessible_employees, log_audit
+from modules.delete_utils import render_delete_button, cascade_delete_employee
 
 def show_employee_management():
     """Main employee management interface"""
@@ -96,18 +97,34 @@ def display_employees_cards(employees):
                     </div>
                 """, unsafe_allow_html=True)
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("👁️ View", key=f"view_{emp['id']}", use_container_width=True):
-                        st.session_state.view_employee_id = emp['id']
-                        st.rerun()
-
-                with col2:
-                    if is_hr_admin() or (is_manager() and emp['manager_id'] == get_current_user()['employee_id']):
+                # Action buttons
+                if is_hr_admin():
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        if st.button("👁️ View", key=f"view_{emp['id']}", use_container_width=True):
+                            st.session_state.view_employee_id = emp['id']
+                            st.rerun()
+                    with col2:
                         if st.button("✏️ Edit", key=f"edit_{emp['id']}", use_container_width=True):
                             st.session_state.show_employee_modal = True
                             st.session_state.edit_employee_id = emp['id']
                             st.rerun()
+                    with col3:
+                        emp_desc = f"{emp['first_name']} {emp['last_name']} ({emp['employee_id']})"
+                        if render_delete_button("employees", emp['id'], emp_desc, f"delete_emp_{emp['id']}"):
+                            st.rerun()
+                else:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("👁️ View", key=f"view_{emp['id']}", use_container_width=True):
+                            st.session_state.view_employee_id = emp['id']
+                            st.rerun()
+                    with col2:
+                        if is_manager() and emp['manager_id'] == get_current_user()['employee_id']:
+                            if st.button("✏️ Edit", key=f"edit_{emp['id']}", use_container_width=True):
+                                st.session_state.show_employee_modal = True
+                                st.session_state.edit_employee_id = emp['id']
+                                st.rerun()
 
 def display_employees_table(employees):
     """Display employees in table view"""
@@ -154,12 +171,18 @@ def display_employees_table(employees):
             format_func=lambda x: f"{next(e['first_name'] + ' ' + e['last_name'] for e in employees if e['id'] == x)} ({next(e['employee_id'] for e in employees if e['id'] == x)})"
         )
 
-        col1, col2 = st.columns([1, 5])
+        col1, col2, col3 = st.columns([1, 1, 4])
         with col1:
             if st.button("✏️ Edit Selected"):
                 st.session_state.show_employee_modal = True
                 st.session_state.edit_employee_id = selected_id
                 st.rerun()
+        with col2:
+            selected_emp = next((e for e in employees if e['id'] == selected_id), None)
+            if selected_emp:
+                emp_desc = f"{selected_emp['first_name']} {selected_emp['last_name']} ({selected_emp['employee_id']})"
+                if render_delete_button("employees", selected_id, emp_desc, f"delete_selected_emp"):
+                    st.rerun()
 
 def show_employee_modal():
     """Modal dialog for adding/editing employee"""

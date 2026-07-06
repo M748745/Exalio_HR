@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime, date, timedelta
 from database import get_db_connection
 from auth import get_current_user, is_hr_admin, is_manager, get_accessible_employees, create_notification, log_audit
+from modules.delete_utils import render_delete_button
 
 def show_contracts_management():
     """Main contracts management interface"""
@@ -106,7 +107,7 @@ def show_all_contracts():
                             st.warning("⚠️ Expiring Soon!")
 
                 # Actions
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     if st.button("🔄 Renew", key=f"renew_{contract['id']}", use_container_width=True):
                         renew_contract(contract['id'], contract['emp_id'])
@@ -120,6 +121,11 @@ def show_all_contracts():
                 with col3:
                     if st.button("✏️ Edit", key=f"edit_{contract['id']}", use_container_width=True):
                         st.session_state.edit_contract_id = contract['id']
+                        st.rerun()
+
+                with col4:
+                    contract_desc = f"Contract-{contract['id']} - {contract['first_name']} {contract['last_name']} ({contract['contract_type']})"
+                    if render_delete_button("contracts", contract['id'], contract_desc, f"delete_contract_{contract['id']}"):
                         st.rerun()
     else:
         st.info("No contracts found")
