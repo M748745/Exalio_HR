@@ -52,20 +52,50 @@ def show_all_templates():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Initialize default templates if table is empty
-        cursor.execute("SELECT COUNT(*) as count FROM hr_template_catalog")
-        if cursor.fetchone()['count'] == 0:
-            init_default_templates(cursor)
-            conn.commit()
+        # Check if table exists, if not create it
+        try:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'hr_template_catalog'
+                )
+            """)
+            table_exists = cursor.fetchone()[0]
 
-        # Load templates from database
-        cursor.execute("""
-            SELECT id, template_name, category, description
-            FROM hr_template_catalog
-            WHERE is_active = 1
-            ORDER BY category, display_order, template_name
-        """)
-        catalog_templates = [dict(row) for row in cursor.fetchall()]
+            if not table_exists:
+                # Create table
+                cursor.execute("""
+                    CREATE TABLE hr_template_catalog (
+                        id SERIAL PRIMARY KEY,
+                        template_name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        description TEXT,
+                        is_active INTEGER DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        created_by INTEGER,
+                        display_order INTEGER DEFAULT 0
+                    )
+                """)
+                conn.commit()
+
+            # Initialize default templates if table is empty
+            cursor.execute("SELECT COUNT(*) as count FROM hr_template_catalog")
+            if cursor.fetchone()['count'] == 0:
+                init_default_templates(cursor)
+                conn.commit()
+
+            # Load templates from database
+            cursor.execute("""
+                SELECT id, template_name, category, description
+                FROM hr_template_catalog
+                WHERE is_active = 1
+                ORDER BY category, display_order, template_name
+            """)
+            catalog_templates = [dict(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            st.error(f"Error loading templates: {str(e)}")
+            catalog_templates = []
 
     # Group by category
     categories = {}
