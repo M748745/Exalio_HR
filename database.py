@@ -281,6 +281,40 @@ def apply_migrations(cursor):
             cursor.execute("ALTER TABLE audit_logs ADD COLUMN new_values TEXT")
             print("✅ Added new_values column to audit_logs")
 
+        # Migration: Create compliance_issues table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS compliance_issues (
+                id SERIAL PRIMARY KEY,
+                issue_title TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                category TEXT,
+                discovered_date DATE,
+                description TEXT,
+                corrective_action TEXT,
+                status TEXT DEFAULT 'Open',
+                resolution_notes TEXT,
+                resolved_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("✅ Created compliance_issues table")
+
+        # Migration: Create compliance_audits table if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS compliance_audits (
+                id SERIAL PRIMARY KEY,
+                requirement_id INTEGER,
+                audit_date DATE,
+                auditor_name TEXT,
+                findings TEXT,
+                status TEXT,
+                recommendations TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("✅ Created compliance_audits table")
+
         # Migration 5: Add training_catalog columns
         cursor.execute("""
             SELECT column_name FROM information_schema.columns
